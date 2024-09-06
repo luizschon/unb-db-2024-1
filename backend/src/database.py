@@ -1,4 +1,5 @@
 import psycopg
+from psycopg.rows import dict_row
 from threading import Lock
 from dotenv import dotenv_values
 
@@ -31,7 +32,13 @@ class DatabaseConnection:
 
     # Re-exporta struct `Cursor` do Psycopg
     def cursor(self):
-        return self._db_connection.cursor()
+        return self._db_connection.cursor(row_factory=dict_row)
+
+    def commit(self):
+        self._db_connection.commit()
+
+    def rollback(self):
+        self._db_connection.rollback()
 
     # Fecha a conexão com o banco de dados
     def close(self):
@@ -43,10 +50,3 @@ class DatabaseConnection:
         except Exception as err:
             print("Couldn't disconnect from database!")
             print(err)
-
-if __name__ == "__main__":
-    db = DatabaseConnection()
-    with db.cursor() as cur:
-        cur.execute("SELECT * FROM event")
-        print(cur.fetchone())
-    db.close()
