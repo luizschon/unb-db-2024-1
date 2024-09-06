@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Partidas - Sistema de Gerenciamento de Eventos Esportivos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="date"], input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        input[type="submit"] {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gerenciar Partidas</h1>
+    
+    <h2>Adicionar Nova Partida</h2>
+    <form id="addMatchForm">
+        <label for="homeTeam">Equipe da Casa:</label>
+        <input type="text" id="homeTeam" name="homeTeam" required>
+        
+        <label for="awayTeam">Equipe Visitante:</label>
+        <input type="text" id="awayTeam" name="awayTeam" required>
+        
+        <label for="matchDate">Data:</label>
+        <input type="date" id="matchDate" name="matchDate" required>
+        
+        <label for="matchTime">Horário:</label>
+        <input type="time" id="matchTime" name="matchTime" required>
+        
+        <label for="matchResult">Resultado:</label>
+        <input type="text" id="matchResult" name="matchResult">
+        
+        <input type="submit" value="Adicionar Partida">
+    </form>
+
+    <h2>Lista de Partidas</h2>
+    <table id="matchTable">
+        <thead>
+            <tr>
+                <th>Equipe da Casa</th>
+                <th>Equipe Visitante</th>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Resultado</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+    </script>
+</body>
+</html>
