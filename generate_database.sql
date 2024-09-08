@@ -119,7 +119,7 @@ CREATE TABLE sponsorship
 CREATE OR REPLACE FUNCTION prevent_update_winner_before_match_end()
 RETURNS trigger AS $$
 BEGIN
-    IF NEW.winner_id IS NOT NULL AND CURRENT_TIMESTAMP <= upper(NEW.duration) THEN
+    IF NEW.winner_id IS NOT NULL AND CURRENT_TIMESTAMP AT TIME ZONE 'UTC' <= upper(NEW.duration) THEN
         RAISE EXCEPTION 'Updates to winner column are not allowed before match end';
     ELSEIF NEW.winner_id IS NOT NULL AND NEW.winner_id != NEW.team1_id OR NEW.winner_id != NEW.team2_id THEN
         RAISE EXCEPTION 'Winner should be one of the competing teams';
@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION prevent_update_score_before_match()
 RETURNS trigger AS $$
 BEGIN
     IF NEW.team1_score != OLD.team1_score OR NEW.team2_score != OLD.team2_score
-    AND CURRENT_TIMESTAMP < lower(NEW.duration) THEN
+    AND CURRENT_TIMESTAMP AT TIME ZONE 'UTC' < lower(NEW.duration) THEN
         RAISE EXCEPTION 'Scores can only be updated during and after the match';
     END IF;
     RETURN NEW;
@@ -160,5 +160,6 @@ BEGIN ATOMIC
 END;
 
 -- TODO: generate data
+
 
 END;
