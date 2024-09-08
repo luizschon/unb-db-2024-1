@@ -77,7 +77,7 @@ CREATE TABLE match
     team2_id serial NOT NULL REFERENCES team (id) ON DELETE RESTRICT,
     team1_score integer DEFAULT 0,
     team2_score integer DEFAULT 0,
-    winner_id serial REFERENCES team (id) ON DELETE RESTRICT,
+    winner_id integer REFERENCES team (id) ON DELETE RESTRICT,
     location_id serial NOT NULL REFERENCES team (id) ON DELETE RESTRICT,
     referee_cpf character(11) NOT NULL REFERENCES referee (cpf) ON DELETE RESTRICT
 );
@@ -115,6 +115,23 @@ CREATE TABLE sponsorship
     amount money NOT NULL,
     PRIMARY KEY (event_id, sponsor_cnpj)
 );
+
+CREATE OR REPLACE FUNCTION prevent_update_winner_before_match_end()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.winner_id IS NOT NULL AND CURRENT_TIMESTAMP <= upper(NEW.duration) THEN
+        RAISE EXCEPTION 'Updates to winner column are not allowed before match end';
+    ELSEIF NEW.winner_id IS NOT NULL AND NEW.winner_id != NEW.team1_id OR NEW.winner_id != NEW.team2_id THEN
+        RAISE EXCEPTION 'Winner should be one of the competing teams';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_winner_update
+BEFORE INSERT OR UPDATE ON match
+FOR EACH ROW
+EXECUTE FUNCTION prevent_update_winner_before_match_end();
 
 -- TODO: generate data
 
