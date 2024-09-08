@@ -1,4 +1,5 @@
 import psycopg
+from psycopg import DatabaseError
 from psycopg.rows import dict_row
 from threading import Lock
 from dotenv import dotenv_values
@@ -16,7 +17,7 @@ class DatabaseConnection:
             if cls._instance == None:
                 print("Creating DatabaseConnection instance")
                 cls._instance = super(DatabaseConnection, cls).__new__(cls);
-                cls._instance.__init__()
+            cls._instance.__init__()
         return cls._instance
 
     # Inicializa conexão ao banco de dados
@@ -26,9 +27,9 @@ class DatabaseConnection:
                 print("Connecting to database server...")
                 self._db_connection = psycopg.connect(config.get("DATABASE_URI") or "")
                 print("Connected sucessfully!")
-        except Exception as err:
+        except DatabaseError as err:
             print("Couldn't connect to database!")
-            print(err)
+            raise
 
     # Re-exporta struct `Cursor` do Psycopg
     def cursor(self):
@@ -49,4 +50,4 @@ class DatabaseConnection:
             print("Disconnected sucessfully!")
         except Exception as err:
             print("Couldn't disconnect from database!")
-            print(err)
+            raise(err)
