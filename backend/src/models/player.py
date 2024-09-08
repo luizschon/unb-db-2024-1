@@ -3,7 +3,7 @@ from typing_extensions import List
 from psycopg import sql
 from src.database import DatabaseConnection
 
-EVENT_SCHEMA = ('cpf', 'name', 'birthdate', 'starting', 'photon', 'team_id')
+EVENT_SCHEMA = ('cpf', 'name', 'birthdate', 'starting', 'photo', 'team_id')
 
 class Event:
     @staticmethod
