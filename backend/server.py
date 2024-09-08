@@ -34,7 +34,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             data = self.parse_json_data()
-            [status, response] = Router.handle_patch(self.path, data=data)
+            [status, response] = Router.handle_post(self.path, data=data)
             self.finish_request(status, response)
         except json.JSONDecodeError:
             self.finish_request(400, {
