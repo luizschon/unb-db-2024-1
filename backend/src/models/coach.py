@@ -29,7 +29,7 @@ class Coach:
 
     @staticmethod
     def create(data):
-        # Filtra valores recebidos que n„o pertencem ao schema da tabela Coach
+        # Filtra valores recebidos que n√£o pertencem ao schema da tabela Coach
         column_value_map = {k: v for k, v in data.items() if k in COACH_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
@@ -61,7 +61,7 @@ class Coach:
 
     @staticmethod
     def update(cpf, data):
-        # Filtra valores recebidos que n„o pertencem ao schema da tabela Coach
+        # Filtra valores recebidos que n√£o pertencem ao schema da tabela Coach
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in COACH_SCHEMA]
         res = None
