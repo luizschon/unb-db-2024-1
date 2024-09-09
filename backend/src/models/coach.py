@@ -2,7 +2,7 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-COACH_SCHEMA = ('cpf', 'name', 'birthdate', 'photo', 'team_id')
+COACH_SCHEMA = ('cpf', 'name', 'birthdate', 'team_id')
 
 class Coach:
     @staticmethod

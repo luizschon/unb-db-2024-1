@@ -2,7 +2,7 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-REFEREE_SCHEMA = ('cpf', 'name', 'birthdate', 'photo', 'certification')
+REFEREE_SCHEMA = ('cpf', 'name', 'birthdate', 'certification')
 
 class Referee:
     @staticmethod
