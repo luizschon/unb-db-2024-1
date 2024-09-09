@@ -9,17 +9,35 @@ class Player:
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from player")
+                cur.execute("SELECT cpf, name, birthdate, starting, team_id from player")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
 
     @staticmethod
-    def find_by_id(cpf):
+    def find_by_cpf(cpf):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from player WHERE cpf = %s", (cpf,))
+                cur.execute("""
+                    SELECT cpf, name, birthdate, starting, team_id from player
+                    WHERE cpf = %s
+                """, (cpf,))
+                row = cur.fetchone()
+            return row
+        except OperationalError:
+            raise(ModelError("no database connection", "00000"))
+
+    @staticmethod
+    def get_fields_by_cpf(cpf, *args):
+        try:
+            with DatabaseConnection().cursor() as cur:
+                query = sql.SQL("""
+                    SELECT {fields} from player WHERE cpf = %s
+                """).format(
+                    fields=sql.SQL(',').join(list(map(lambda a: sql.Identifier(a), args)))
+                )
+                cur.execute(query, (cpf,))
                 row = cur.fetchone()
             return row
         except OperationalError:
@@ -35,7 +53,8 @@ class Player:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO player ({columns}) VALUES ({values}) RETURNING *
+                    INSERT INTO player ({columns}) VALUES ({values})
+                    RETURNING cpf, name, birthdate, starting, team_id
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -63,7 +82,8 @@ class Player:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE player SET {assigns} WHERE cpf = %s RETURNING *
+                    UPDATE player SET {assigns} WHERE cpf = %s
+                    RETURNING cpf, name, birthdate, starting, team_id
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(

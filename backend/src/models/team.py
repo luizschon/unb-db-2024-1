@@ -9,7 +9,7 @@ class Team:
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from team")
+                cur.execute("SELECT id, name from team")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
@@ -19,11 +19,27 @@ class Team:
     def find_by_id(id):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from team WHERE id = %s", (id,))
+                cur.execute("SELECT id, name from team WHERE id = %s", (id,))
                 row = cur.fetchone()
             return row
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+
+    @staticmethod
+    def get_fields_by_id(cpf, *args):
+        try:
+            with DatabaseConnection().cursor() as cur:
+                query = sql.SQL("""
+                    SELECT {fields} from team WHERE id = %s
+                """).format(
+                    fields=sql.SQL(',').join(list(map(lambda a: sql.Identifier(a), args)))
+                )
+                cur.execute(query, (cpf,))
+                row = cur.fetchone()
+            return row
+        except OperationalError:
+            raise(ModelError("no database connection", "00000"))
+
 
     @staticmethod
     def create(data):
@@ -35,7 +51,7 @@ class Team:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO team ({columns}) VALUES ({values}) RETURNING *
+                    INSERT INTO team ({columns}) VALUES ({values}) RETURNING id, name
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -63,7 +79,7 @@ class Team:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE team SET {assigns} WHERE id = %s RETURNING *
+                    UPDATE team SET {assigns} WHERE id = %s RETURNING id, name
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
