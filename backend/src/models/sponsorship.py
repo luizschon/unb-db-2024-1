@@ -2,24 +2,26 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-EVENT_SCHEMA = ('name', 'date')
+SPONSORSHIP_SCHEMA = ('event_id', 'sponsor_cnpj', 'amount')
 
-class Event:
+class Sponsorship:
     @staticmethod
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from event")
+                cur.execute("SELECT * from sponsorship")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
 
     @staticmethod
-    def find_by_id(id):
+    def find_by_ids(event_id, sponsor_cnpj):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from event WHERE id = %s", (id,))
+                cur.execute("""
+                    SELECT * from sponsorship WHERE event_id = %s sponsor_cnpj = %s
+                """, (event_id, sponsor_cnpj,))
                 row = cur.fetchone()
             return row
         except OperationalError:
@@ -27,16 +29,15 @@ class Event:
 
     @staticmethod
     def create(data):
-        # Filtra valores recebidos que não pertencem ao schema da tabela Event
-        column_value_map = {k: v for k, v in data.items() if k in EVENT_SCHEMA}
+        # Filtra valores recebidos que não pertencem ao schema da tabela Sponsorship
+        column_value_map = {k: v for k, v in data.items() if k in SPONSORSHIP_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO event ({columns}) VALUES ({values}) RETURNING id
+                    INSERT INTO sponsorship ({columns}) VALUES ({values}) RETURNING *
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -46,28 +47,28 @@ class Event:
                     )
                 )
                 cur.execute(query)
-                res = cur.fetchone()
+                row = cur.fetchone()
             DatabaseConnection().commit()
+            return row
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-        if res:
-            return Event.find_by_id(res["id"])
 
     @staticmethod
-    def update(id, data):
-        # Filtra valores recebidos que não pertencem ao schema da tabela Event
+    def update(event_id, sponsor_cnpj, data):
+        # Filtra valores recebidos que não pertencem ao schema da tabela Sponsorship
         # e transforma em lista de tuplas
-        items = [(k, v) for k, v in data.items() if k in EVENT_SCHEMA]
+        items = [(k, v) for k, v in data.items() if k in SPONSORSHIP_SCHEMA]
         res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE event SET {assigns} WHERE id = %s RETURNING id
+                    UPDATE sponsorship SET {assigns} WHERE event_id = %s AND sponsor_cnpj = %s
+                    RETURNING *
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
@@ -78,37 +79,37 @@ class Event:
                         ))
                     )
                 )
-                cur.execute(query, (id,))
-                res = cur.fetchone()
+                cur.execute(query, (event_id, sponsor_cnpj,))
+                row = cur.fetchone()
             DatabaseConnection().commit()
+            return row
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-        if res:
-            return Event.find_by_id(res["id"])
-
     @staticmethod
-    def delete(id):
+    def delete(event_id, sponsor_cnpj):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("DELETE FROM event WHERE id = %s", (id,))
+                cur.execute("""
+                    DELETE FROM sponsorship WHERE event_id = %s AND sponsor_cnpj = %s
+                """, (event_id, sponsor_cnpj,))
             DatabaseConnection().commit()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
 
     @staticmethod
     def where(data):
-        # Filtra valores recebidos que não pertencem ao schema da tabela Event
+        # Filtra valores recebidos que não pertencem ao schema da tabela Sponsorship
         # e transforma em lista de tuplas
-        items = [(k, v) for k, v in data.items() if k in EVENT_SCHEMA]
+        items = [(k, v) for k, v in data.items() if k in SPONSORSHIP_SCHEMA]
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    SELECT * from event WHERE {conditions}
+                    SELECT * from sponsorship WHERE {conditions}
                 """).format(
                     conditions=sql.SQL(' AND ').join(
                         list(map(
@@ -120,7 +121,7 @@ class Event:
                     )
                 )
                 cur.execute(query)
-                res = cur.fetchall()
+                return cur.fetchall()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:

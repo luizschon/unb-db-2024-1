@@ -11,6 +11,7 @@ class Router:
     path_map = {
         ("GET", r"/event/?$"): lambda _m, _: EventController.index(),
         ("GET", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.show(m.group('id')),
+        ("GET", r"/event/(?P<id>\d+)/sponsorships/?$"): lambda m, _: EventController.get_sponsorships(m.group('id')),
         ("POST", r"/event/?$"): lambda _, data: EventController.create(data),
         ("PATCH", r"/event/(?P<id>\d+)/?$"): lambda m, data: EventController.update(m.group('id'), data),
         ("DELETE", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.destroy(m.group('id')),
@@ -21,7 +22,6 @@ class Router:
         try:
             # Filtra o PathMap pelo método HTTP usado (GET, POST, ...)
             filtered = {k: v for k, v in cls.path_map.items() if k[0] == method.upper()}
-            print("filtrado:", filtered)
             for key, func in filtered.items():
                 pattern = key[1]
                 match = re.match(pattern, path)
@@ -30,14 +30,13 @@ class Router:
                     return func(match, data)
             return not_found()
         except:
-            return not_found()
+            return [500, None]
 
     @staticmethod
     def handle_get(path, **kwargs) -> RouterReponse:
         print("GET", path)
         print(path)
         res = Router.route("GET", path)
-        print(res)
         return res
 
     @staticmethod

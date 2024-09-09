@@ -99,3 +99,31 @@ class Sponsor:
             DatabaseConnection().commit()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+
+    @staticmethod
+    def where(data):
+        # Filtra valores recebidos que não pertencem ao schema da tabela Sponsor
+        # e transforma em lista de tuplas
+        items = [(k, v) for k, v in data.items() if k in SPONSOR_SCHEMA]
+
+        try:
+            with DatabaseConnection().cursor() as cur:
+                query = sql.SQL("""
+                    SELECT * from sponsor WHERE {conditions}
+                """).format(
+                    conditions=sql.SQL(' AND ').join(
+                        list(map(
+                            lambda i: sql.SQL("{} = {}").format(
+                                sql.Identifier(i[0]), sql.Literal(i[1])
+                            ),
+                            items
+                        ))
+                    )
+                )
+                cur.execute(query)
+                res = cur.fetchall()
+        except OperationalError:
+            raise(ModelError("no database connection", "00000"))
+        except DatabaseError as err:
+            DatabaseConnection().rollback()
+            raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))

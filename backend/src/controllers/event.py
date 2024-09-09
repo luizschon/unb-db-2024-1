@@ -1,7 +1,10 @@
 import psycopg
+import base64
 from src.models.error import ModelError
 from src.types import RouterReponse
 from src.models.event import Event
+from src.models.sponsor import Sponsor
+from src.models.sponsorship import Sponsorship
 
 class EventController:
     @staticmethod
@@ -70,6 +73,26 @@ class EventController:
             print("destroy id:", id)
             Event.delete(id)
             return [200, { "status": "success", "response": None }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def get_sponsorships(id) -> RouterReponse:
+        try:
+            s = Sponsorship.where({ "event_id": int(id) })
+            result = []
+            for sponsorship in s or []:
+                sponsor = Sponsor.find_by_cnpj(sponsorship['sponsor_cnpj'])
+                if sponsor:
+                    sponsor['logo'] = base64.b64encode(sponsor["logo"]).decode("utf-8")
+                    sponsor = sponsor | { "amount": sponsorship["amount"] }
+                    result.append(sponsor)
+
+            return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
                 "status": "error",
