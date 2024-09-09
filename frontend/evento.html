@@ -3,87 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Eventos - Sistema de Gerenciamento de Eventos Esportivos</title>
+    <title>Gerenciar Eventos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input[type="text"], input[type="date"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-        }
-        input[type="submit"] {
-            background-color: #0066cc;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        h1, h2 { color: #333; }
+        form { margin-bottom: 20px; }
+        input, button { margin: 5px 0; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
     <h1>Gerenciar Eventos</h1>
-    
-    <h2>Adicionar Novo Evento</h2>
-    <form id="addEventForm">
-        <label for="eventName">Nome do Evento:</label>
-        <input type="text" id="eventName" name="eventName" required>
-        
-        <label for="eventDate">Data:</label>
-        <input type="date" id="eventDate" name="eventDate" required>
-        
-        <label for="eventLocation">Local:</label>
-        <input type="text" id="eventLocation" name="eventLocation" required>
-        
-        <input type="submit" value="Adicionar Evento">
+
+    <h2>Adicionar/Editar Evento</h2>
+    <form id="eventoForm">
+        <input type="hidden" id="eventoId">
+        <input type="text" id="nome" placeholder="Nome do Evento" required>
+        <input type="date" id="data" required>
+        <button type="submit">Salvar Evento</button>
     </form>
 
     <h2>Lista de Eventos</h2>
-    <table id="eventTable">
+    <table id="eventoTable">
         <thead>
             <tr>
                 <th>Nome</th>
                 <th>Data</th>
-                <th>Local</th>
                 <th>Ações</th>
             </tr>
         </thead>
-        <tbody>
-            
-        </tbody>
+        <tbody></tbody>
     </table>
 
     <script>
-       
+        const API_URL = 'http://localhost:8000/event';
+        let eventos = [];
+
+        // Funções auxiliares
+        const formatDate = (date) => moment(date).format('DD/MM/YYYY');
+        const resetForm = () => {
+            document.getElementById('eventoForm').reset();
+            document.getElementById('eventoId').value = '';
+        };
+
+        // Carregar eventos
+        const loadEventos = async () => {
+            try {
+                const response = await axios.get(API_URL);
+                eventos = response.data.response;
+                renderEventos();
+            } catch (error) {
+                console.error('Erro ao carregar eventos:', error);
+            }
+        };
+
+        // Renderizar eventos na tabela
+        const renderEventos = () => {
+            const tbody = document.querySelector('#eventoTable tbody');
+            tbody.innerHTML = eventos.map(evento => `
+                <tr>
+                    <td>${evento.name}</td>
+                    <td>${formatDate(evento.date)}</td>
+                    <td>
+                        <button onclick="editEvento(${evento.id})">Editar</button>
+                        <button onclick="deleteEvento(${evento.id})">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        // Salvar ou atualizar evento
+        const saveEvento = async (event) => {
+            event.preventDefault();
+            const id = document.getElementById('eventoId').value;
+            const name = document.getElementById('nome').value;
+            const date = document.getElementById('data').value;
+            const data = { name, date };
+
+            try {
+                if (id) {
+                    await axios.patch(`${API_URL}/${id}`, data);
+                } else {
+                    await axios.post(API_URL, data);
+                }
+                resetForm();
+                loadEventos();
+            } catch (error) {
+                console.error('Erro ao salvar evento:', error);
+            }
+        };
+
+        // Editar evento
+        const editEvento = (id) => {
+            const evento = eventos.find(e => e.id === id);
+            if (evento) {
+                document.getElementById('eventoId').value = evento.id;
+                document.getElementById('nome').value = evento.name;
+                document.getElementById('data').value = moment(evento.date).format('YYYY-MM-DD');
+            }
+        };
+
+        // Excluir evento
+        const deleteEvento = async (id) => {
+            if (confirm('Tem certeza que deseja excluir este evento?')) {
+                try {
+                    await axios.delete(`${API_URL}/${id}`);
+                    loadEventos();
+                } catch (error) {
+                    console.error('Erro ao excluir evento:', error);
+                }
+            }
+        };
+
+        // Event listeners
+        document.getElementById('eventoForm').addEventListener('submit', saveEvento);
+        document.addEventListener('DOMContentLoaded', loadEventos);
     </script>
 </body>
 </html>
