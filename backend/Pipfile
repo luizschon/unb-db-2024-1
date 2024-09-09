@@ -7,6 +7,7 @@ name = "pypi"
 psycopg = {extras = ["binary"], version = "*"}
 python-decouple = "*"
 python-dotenv = "*"
+requests-toolbelt = "*"
 
 [dev-packages]
 
