@@ -1,5 +1,3 @@
-from typing import Dict
-from typing_extensions import Any, List
 from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
@@ -24,7 +22,7 @@ class Match:
             raise(ModelError("no database connection", "00000"))
 
     @staticmethod
-    def find_by_id(id) -> Dict | None:
+    def find_by_id(id):
         try:
             with DatabaseConnection().cursor() as cur:
                 cur.execute("SELECT * from match WHERE id = %s", (id,))
@@ -71,7 +69,6 @@ class Match:
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in MATCH_UPDATE_SCHEMA]
         res = None
-        print(items)
 
         try:
             with DatabaseConnection().cursor() as cur:
@@ -87,7 +84,6 @@ class Match:
                         ))
                     )
                 )
-                print(query.as_string())
                 cur.execute(query, (id,))
                 res = cur.fetchone()
             DatabaseConnection().commit()

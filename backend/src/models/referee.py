@@ -1,5 +1,3 @@
-from typing import Dict
-from typing_extensions import Any, List
 from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
@@ -18,7 +16,7 @@ class Referee:
             raise(ModelError("no database connection", "00000"))
 
     @staticmethod
-    def find_by_cpf(cpf) -> Dict | None:
+    def find_by_cpf(cpf):
         try:
             with DatabaseConnection().cursor() as cur:
                 cur.execute("SELECT * from referee WHERE cpf = %s", (cpf,))
@@ -65,7 +63,6 @@ class Referee:
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in REFEREE_SCHEMA]
         res = None
-        print(items)
 
         try:
             with DatabaseConnection().cursor() as cur:
@@ -81,7 +78,6 @@ class Referee:
                         ))
                     )
                 )
-                print(query.as_string())
                 cur.execute(query, (cpf,))
                 res = cur.fetchone()
             DatabaseConnection().commit()
