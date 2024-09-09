@@ -2,6 +2,7 @@ import re
 from threading import Event
 from typing_extensions import Callable, Dict, List, Optional, Tuple, Union
 from src.controllers.event import EventController
+from src.controllers.team import TeamController
 from src.types import RouterReponse
 
 def not_found() -> RouterReponse:
@@ -9,12 +10,20 @@ def not_found() -> RouterReponse:
 
 class Router:
     path_map = {
+        # Event Actions
         ("GET", r"/event/?$"): lambda _m, _: EventController.index(),
-        ("GET", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.show(m.group('id')),
+        ("GET", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.show(int(m.group('id'))),
         ("GET", r"/event/(?P<id>\d+)/sponsorships/?$"): lambda m, _: EventController.get_sponsorships(m.group('id')),
         ("POST", r"/event/?$"): lambda _, data: EventController.create(data),
-        ("PATCH", r"/event/(?P<id>\d+)/?$"): lambda m, data: EventController.update(m.group('id'), data),
-        ("DELETE", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.destroy(m.group('id')),
+        ("PATCH", r"/event/(?P<id>\d+)/?$"): lambda m, data: EventController.update(int(m.group('id')), data),
+        ("DELETE", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.destroy(int(m.group('id'))),
+
+        # Team Actions
+        ("GET", r"/team/?$"): lambda _m, _: TeamController.index(),
+        ("GET", r"/team/(?P<id>\d+)/?$"): lambda m, _: TeamController.show(int(m.group('id'))),
+        ("POST", r"/team/?$"): lambda _, data: TeamController.create(data),
+        ("PATCH", r"/team/(?P<id>\d+)/?$"): lambda m, data: TeamController.update(int(m.group('id')), data),
+        ("DELETE", r"/team/(?P<id>\d+)/?$"): lambda m, _: TeamController.destroy(int(m.group('id'))),
     }
 
     @classmethod
@@ -35,20 +44,17 @@ class Router:
     @staticmethod
     def handle_get(path, **kwargs) -> RouterReponse:
         print("GET", path)
-        print(path)
         res = Router.route("GET", path)
         return res
 
     @staticmethod
     def handle_post(path, data, **kwargs) -> RouterReponse:
         print("POST", path)
-        print(data)
         return Router.route("POST", path, data)
 
     @staticmethod
     def handle_patch(path, data, **kwargs) -> RouterReponse:
         print("PATCH", path)
-        print(data)
         return Router.route("PATCH", path, data)
 
     @staticmethod

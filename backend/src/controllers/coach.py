@@ -10,7 +10,7 @@ class CoachController:
             result = Coach.all()
             # Faz parse da data para usar formato ISO 8601
             for r in result:
-                r["date"] = r["date"].isoformat()
+                r["birthdate"] = r["birthdate"].isoformat()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -25,7 +25,7 @@ class CoachController:
             result = Coach.find_by_cpf(cpf)
             # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["birthdate"] = result["birthdate"].isoformat()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -40,7 +40,7 @@ class CoachController:
             result = Coach.create(data)
             # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["birthdate"] = result["birthdate"].isoformat()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -55,7 +55,7 @@ class CoachController:
             result = Coach.update(cpf, data)
             # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["birthdate"] = result["birthdate"].isoformat()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {

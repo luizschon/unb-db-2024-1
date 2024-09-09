@@ -1,4 +1,6 @@
-Tournamentimport psycopg
+import psycopg
+import base64
+from src.utils import encode_base64
 from src.models.error import ModelError
 from src.types import RouterReponse
 from src.models.team import Team
@@ -8,9 +10,8 @@ class TeamController:
     def index() -> RouterReponse:
         try:
             result = Team.all()
-            # Faz parse da data para usar formato ISO 8601
-            for r in result:
-                r["date"] = r["date"].isoformat()
+            for team in result or []:
+                team["logo"] = encode_base64(team["logo"])
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -23,9 +24,8 @@ class TeamController:
     def show(id) -> RouterReponse:
         try:
             result = Team.find_by_id(id)
-            # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["logo"] = encode_base64(result["logo"])
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -37,10 +37,10 @@ class TeamController:
     @staticmethod
     def create(data) -> RouterReponse:
         try:
+            print(data.keys())
             result = Team.create(data)
-            # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["logo"] = encode_base64(result["logo"])
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -53,9 +53,8 @@ class TeamController:
     def update(id, data) -> RouterReponse:
         try:
             result = Team.update(id, data)
-            # Faz parse da data para usar formato ISO 8601
             if result:
-                result["date"] = result["date"].isoformat()
+                result["logo"] = encode_base64(result["logo"])
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -67,7 +66,6 @@ class TeamController:
     @staticmethod
     def destroy(id) -> RouterReponse:
         try:
-            print("destroy id:", id)
             Team.delete(id)
             return [200, { "status": "success", "response": None }]
         except ModelError as err:
