@@ -9,7 +9,7 @@ class Referee:
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from referee")
+                cur.execute("SELECT cpf, name, birthdate from referee")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
@@ -19,7 +19,7 @@ class Referee:
     def find_by_cpf(cpf):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from referee WHERE cpf = %s", (cpf,))
+                cur.execute("SELECT cpf, name, birthdate from referee WHERE cpf = %s", (cpf,))
                 row = cur.fetchone()
             return row
         except OperationalError:
@@ -28,7 +28,7 @@ class Referee:
     @staticmethod
     def create(data):
         # Filtra valores recebidos que não pertencem ao schema da tabela Referee
-        column_value_map = {k: v for k, v in data.items() if k in COACH_SCHEMA}
+        column_value_map = {k: v for k, v in data.items() if k in REFEREE_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
         res = None

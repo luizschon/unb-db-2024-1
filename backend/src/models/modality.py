@@ -9,7 +9,7 @@ class Modality:
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from modality")
+                cur.execute("SELECT name from modality")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
@@ -19,7 +19,7 @@ class Modality:
     def find_by_id(id):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from modality WHERE id = %s", (id,))
+                cur.execute("SELECT name from modality WHERE id = %s", (id,))
                 row = cur.fetchone()
             return row
         except OperationalError:
