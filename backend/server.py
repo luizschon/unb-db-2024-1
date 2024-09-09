@@ -1,7 +1,9 @@
 import json
+from requests_toolbelt import MultipartDecoder
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from dotenv import dotenv_values
 from src.routes import Router
+from src.utils import parse_formdata
 
 config = dotenv_values(".env")
 server_address = (
@@ -10,12 +12,23 @@ server_address = (
 )
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def parse_json_data(self):
-        try:
-            content_len = int(self.headers['Content-Length'])
-            return json.loads(self.rfile.read(content_len))
-        except Exception:
-            raise
+    def parse_data(self):
+        print(self.headers["Content-Type"])
+        content_type = self.headers["Content-Type"]
+        content_len = int(self.headers['Content-Length'])
+        body = self.rfile.read(content_len)
+
+        if content_type.startswith("application/json"):
+            try:
+                return json.loads(body)
+            except Exception:
+                raise
+        elif content_type.startswith("multipart/form-data"):
+            data = MultipartDecoder(body, content_type)
+            return parse_formdata(data)
+        else:
+            self.send_error(400)
+
 
     def finish_request(self, status, response):
         self.send_response(status)
@@ -33,7 +46,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            data = self.parse_json_data()
+            data = self.parse_data()
             [status, response] = Router.handle_post(self.path, data=data)
             self.finish_request(status, response)
         except json.JSONDecodeError:
@@ -44,7 +57,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_PATCH(self):
         try:
-            data = self.parse_json_data()
+            data = self.parse_data()
             [status, response] = Router.handle_patch(self.path, data=data)
             self.finish_request(status, response)
         except json.JSONDecodeError:
