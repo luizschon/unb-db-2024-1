@@ -114,6 +114,51 @@ CREATE TABLE sponsorship
     PRIMARY KEY (event_id, sponsor_cnpj)
 );
 
+CREATE OR REPLACE VIEW upcoming_matches AS
+    SELECT match.id, match.location_id, match.referee_cpf, match.team1_id,
+    match.team2_id, match.duration, event.id as event_id, event.name AS event_name,
+    m.id AS modality_id, m.name AS modality_name, team1.name AS team1_name,
+    team2.name AS team2_name, l.name, l.city, l.state, l.address, r.name AS referee_name
+    FROM event
+    INNER JOIN tournament AS t ON t.event_id = event.id
+    INNER JOIN modality AS m ON t.modality_id = m.id
+    INNER JOIN match ON match.tournament_id = t.id
+    INNER JOIN location AS l ON match.location_id = l.id
+    INNER JOIN team AS team1 ON team1.id = match.team1_id
+    INNER JOIN team AS team2 ON team2.id = match.team2_id
+    INNER JOIN referee AS r ON match.referee_cpf = r.cpf
+    WHERE lower(match.duration) > CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
+
+CREATE OR REPLACE VIEW finished_matches AS
+    SELECT match.*, event.id as event_id, event.name AS event_name,
+    m.id AS modality_id, m.name AS modality_name, team1.name AS team1_name,
+    team2.name AS team2_name, l.name, l.city, l.state, l.address, r.name AS referee_name
+    FROM event
+    INNER JOIN tournament AS t ON t.event_id = event.id
+    INNER JOIN modality AS m ON t.modality_id = m.id
+    INNER JOIN match ON match.tournament_id = t.id
+    INNER JOIN location AS l ON match.location_id = l.id
+    INNER JOIN team AS team1 ON team1.id = match.team1_id
+    INNER JOIN team AS team2 ON team2.id = match.team2_id
+    INNER JOIN referee AS r ON match.referee_cpf = r.cpf
+    WHERE upper(duration) < CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
+
+CREATE OR REPLACE VIEW ongoing_matches AS
+    SELECT match.id, match.location_id, match.referee_cpf, match.team1_id,
+    match.team2_id, match.team1_score, match.team2_score, match.duration,
+    event.id as event_id, event.name AS event_name, m.id AS modality_id,
+    m.name AS modality_name, team1.name AS team1_name, team2.name AS team2_name,
+    l.name, l.city, l.state, l.address, r.name AS referee_name
+    FROM event
+    INNER JOIN tournament AS t ON t.event_id = event.id
+    INNER JOIN modality AS m ON t.modality_id = m.id
+    INNER JOIN match ON match.tournament_id = t.id
+    INNER JOIN location AS l ON match.location_id = l.id
+    INNER JOIN team AS team1 ON team1.id = match.team1_id
+    INNER JOIN team AS team2 ON team2.id = match.team2_id
+    INNER JOIN referee AS r ON match.referee_cpf = r.cpf
+    WHERE CURRENT_TIMESTAMP AT TIME ZONE 'UTC' <@ duration;
+
 CREATE OR REPLACE FUNCTION prevent_update_winner_before_match_end()
 RETURNS trigger AS $$
 BEGIN
