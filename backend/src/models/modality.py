@@ -31,12 +31,11 @@ class Modality:
         column_value_map = {k: v for k, v in data.items() if k in MODALITY_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO modality ({columns}) VALUES ({values}) RETURNING id
+                    INSERT INTO modality ({columns}) VALUES ({values}) RETURNING *
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -48,26 +47,23 @@ class Modality:
                 cur.execute(query)
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-        if res:
-            return Modality.find_by_id(res["id"])
-
     @staticmethod
     def update(id, data):
         # Filtra valores recebidos que não pertencem ao schema da tabela Modality
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in MODALITY_SCHEMA]
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE modality SET {assigns} WHERE id = %s RETURNING id
+                    UPDATE modality SET {assigns} WHERE id = %s RETURNING *
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
@@ -81,14 +77,12 @@ class Modality:
                 cur.execute(query, (id,))
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
-
-        if res:
-            return Modality.find_by_id(res["id"])
 
     @staticmethod
     def delete(id):

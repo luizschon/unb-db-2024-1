@@ -31,12 +31,11 @@ class Event:
         column_value_map = {k: v for k, v in data.items() if k in EVENT_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO event ({columns}) VALUES ({values}) RETURNING id
+                    INSERT INTO event ({columns}) VALUES ({values}) RETURNING *
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -48,14 +47,12 @@ class Event:
                 cur.execute(query)
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
-
-        if res:
-            return Event.find_by_id(res["id"])
 
     @staticmethod
     def update(id, data):
@@ -86,9 +83,6 @@ class Event:
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
-
-        if res:
-            return Event.find_by_id(res["id"])
 
     @staticmethod
     def delete(id):

@@ -31,12 +31,11 @@ class Referee:
         column_value_map = {k: v for k, v in data.items() if k in REFEREE_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO referee ({columns}) VALUES ({values}) RETURNING cpf
+                    INSERT INTO referee ({columns}) VALUES ({values}) RETURNING cpf, name, birthdate
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -48,26 +47,23 @@ class Referee:
                 cur.execute(query)
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-        if res:
-            return Referee.find_by_cpf(res["cpf"])
-
     @staticmethod
     def update(cpf, data):
         # Filtra valores recebidos que não pertencem ao schema da tabela Referee
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in REFEREE_SCHEMA]
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE referee SET {assigns} WHERE cpf = %s RETURNING cpf
+                    UPDATE referee SET {assigns} WHERE cpf = %s RETURNING cpf, name, birthdate
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
@@ -81,14 +77,12 @@ class Referee:
                 cur.execute(query, (cpf,))
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
-
-        if res:
-            return Referee.find_by_cpf(res["cpf"])
 
     @staticmethod
     def delete(cpf):

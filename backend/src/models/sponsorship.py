@@ -56,7 +56,6 @@ class Sponsorship:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-
     @staticmethod
     def update(event_id, sponsor_cnpj, data):
         # Filtra valores recebidos que não pertencem ao schema da tabela Sponsorship

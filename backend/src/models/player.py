@@ -31,12 +31,11 @@ class Player:
         column_value_map = {k: v for k, v in data.items() if k in PLAYER_SCHEMA}
         columns = column_value_map.keys()
         values = column_value_map.values()
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO player ({columns}) VALUES ({values}) RETURNING cpf
+                    INSERT INTO player ({columns}) VALUES ({values}) RETURNING *
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -48,26 +47,23 @@ class Player:
                 cur.execute(query)
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
-        if res:
-            return Player.find_by_id(res["cpf"])
-
     @staticmethod
     def update(cpf, data):
         # Filtra valores recebidos que não pertencem ao schema da tabela Player
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in PLAYER_SCHEMA]
-        res = None
 
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE player SET {assigns} WHERE cpf = %s RETURNING cpf
+                    UPDATE player SET {assigns} WHERE cpf = %s RETURNING *
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
@@ -82,14 +78,12 @@ class Player:
                 cur.execute(query, (cpf,))
                 res = cur.fetchone()
             DatabaseConnection().commit()
+            return res
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
             DatabaseConnection().rollback()
             raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
-
-        if res:
-            return Player.find_by_id(res["cpf"])
 
     @staticmethod
     def delete(cpf):
