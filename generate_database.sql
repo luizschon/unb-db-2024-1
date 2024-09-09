@@ -64,7 +64,6 @@ CREATE TABLE referee
     cpf character(11) PRIMARY KEY,
     name character varying(50) NOT NULL,
     birthdate date NOT NULL,
-    photo bytea NOT NULL,
     certification bytea NOT NULL
 );
 
@@ -97,7 +96,6 @@ CREATE TABLE coach
     cpf character(11) PRIMARY KEY,
     name character varying(50) NOT NULL,
     birthdate date NOT NULL,
-    photo bytea NOT NULL,
     team_id serial NOT NULL REFERENCES team(id) ON DELETE CASCADE
 );
 
@@ -161,5 +159,115 @@ END;
 
 -- TODO: generate data
 
+INSERT INTO event (name, date)
+VALUES ('Evento massa', '2024-08-27');
+INSERT INTO event (name, date)
+VALUES ('Evento legal', '2024-08-30');
+INSERT INTO event (name, date)
+VALUES ('Evento incrivel', '2024-09-03');
+INSERT INTO event (name, date)
+VALUES ('Evento mais ou menos', '2024-09-20');
+INSERT INTO event (name, date)
+VALUES ('Evento supimpa', '2024-09-20');
+
+VALUES ('11111111111111', 'Parrot Co.', pg_read_binary_file('parrot.png'));
+INSERT INTO sponsor (cnpj, name, logo)
+VALUES ('22222222222222', 'Fakestate Inc.', pg_read_binary_file('fakestate.png'));
+INSERT INTO sponsor (cnpj, name, logo)
+VALUES ('33333333333333', 'Green Company', pg_read_binary_file('green.jpg'));
+INSERT INTO sponsor (cnpj, name, logo)
+VALUES ('44444444444444', 'Triag Co.', pg_read_binary_file('triangle.png'));
+INSERT INTO sponsor (cnpj, name, logo)
+VALUES ('55555555555555', 'Gear SA', pg_read_binary_file('gearing.png'));
+
+INSERT INTO sponsorship ()
+VALUES ();
+
+INSERT INTO modality (name, rules)
+VALUES ('Futebol', pg_read_binary_file('regulamento_futebol.pdf'));
+INSERT INTO modality (name, rules)
+VALUES ('Voleibol', pg_read_binary_file('regulamento_volei.pdf'));
+INSERT INTO modality (name, rules)
+VALUES ('Futsal', pg_read_binary_file('regulamento_futsal.pdf'));
+INSERT INTO modality (name, rules)
+VALUES ('Basquete', pg_read_binary_file('regulamento_basquete.pdf'));
+INSERT INTO modality (name, rules)
+VALUES ('Tênis', pg_read_binary_file('regulamento_tenis.pdf'));
+
+INSERT INTO tournament ()
+VALUES ();
+
+INSERT INTO team (name, logo)
+VALUES ('Panda', pg_read_binary_file('pandas.png'));
+INSERT INTO team (name, logo)
+VALUES ('Hollow', pg_read_binary_file('hollow.png'));
+INSERT INTO team (name, logo)
+VALUES ('Postgres', pg_read_binary_file('postgres.png'));
+INSERT INTO team (name, logo)
+VALUES ('Tatu Bolas', pg_read_binary_file('tatu_bolas.png'));
+INSERT INTO team (name, logo)
+VALUES ('Caveiras', pg_read_binary_file('caveiras.png'));
+
+INSERT INTO ranking ()
+VALUES ();
+
+INSERT INTO referee
+VALUES ('11111111111', 'José da Silva', '1980-10-10', pg_read_binary_file('sample.pdf'));
+INSERT INTO referee
+VALUES ('22222222222', 'Luciele Valadares', '1990-10-18', pg_read_binary_file('sample.pdf'));
+INSERT INTO referee
+VALUES ('33333333333', 'Pedro Guimarães', '1985-08-27', pg_read_binary_file('sample.pdf'));
+INSERT INTO referee
+VALUES ('44444444444', 'Fernando Souza', '1979-04-20', pg_read_binary_file('sample.pdf'));
+INSERT INTO referee
+VALUES ('55555555555', 'Laila Gomes', '1992-01-02', pg_read_binary_file('sample.pdf'));
+
+INSERT INTO coach
+VALUES ('66666666666', 'Ricardo Cardoso', '1985-10-10');
+INSERT INTO coach
+VALUES ('77777777777', 'Maria Cardoso', '1989-12-10');
+INSERT INTO coach
+VALUES ('88888888888', 'Fernando Pereira', '1990-02-25');
+INSERT INTO coach
+VALUES ('99999999999', 'Josefina de Jesus', '1980-12-25');
+INSERT INTO coach
+VALUES ('10000000000', 'Felipe Bastos', '1968-06-06');
+INSERT INTO coach
+VALUES ('10000000001', 'Felipe Bastos', '1968-06-06');
+INSERT INTO coach
+VALUES ('10000000002', 'Priscila Fernandes', '1980-06-10');
+INSERT INTO coach
+VALUES ('10000000003', 'Paula Brago', '1990-07-06');
+
+INSERT INTO player
+VALUES ('10000000004', 'Rodolfo Nogueira', '2000-08-27', true, pg_read_binary_file('person1.png'));
+INSERT INTO player
+VALUES ('10000000005', 'Filipe Souza', '2003-09-10', true, pg_read_binary_file('person2.png'));
+INSERT INTO player
+VALUES ('10000000006', 'Hudson Machado', '1997-12-14', true, pg_read_binary_file('person3.png'));
+INSERT INTO player
+VALUES ('10000000007', 'Fernanda Rodrigues', '1996-10-01', true, pg_read_binary_file('person4.png'));
+INSERT INTO player
+VALUES ('10000000008', 'Rodrigo Oliveira', '2001-12-25', true, pg_read_binary_file('person5.png'));
+INSERT INTO player
+VALUES ('10000000009', 'Carlos Frei', '2001-11-09', true, pg_read_binary_file('person6.png'));
+INSERT INTO player
+VALUES ('10000000010', 'Luisa Ferreira', '2002-01-01', true, pg_read_binary_file('person7.png'));
+INSERT INTO player
+VALUES ('10000000011', 'Pedro de Jesus', '2005-04-10', true, pg_read_binary_file('person8.png'));
+
+INSERT INTO location (name, city, state, address, capacity)
+VALUES ('Mané Garrincha', 'Brasília', 'Distrito Federal', 'SRPN Estádio Nacional Mané Garrincha', 69910);
+INSERT INTO location (name, city, state, address, capacity)
+VALUES ('Arena Real', 'Sobradinho', 'Distrito Federal', 'Quadra 8 Conjunto A', 520);
+INSERT INTO location (name, city, state, address, capacity)
+VALUES ('Arena Irreal', 'Taguatinga', 'Distrito Federal', 'QNJ 14 Conjunto 10', 200);
+INSERT INTO location (name, city, state, address, capacity)
+VALUES ('Quadra dos Sonhos', 'Brasília', 'Distrito Federal', 'SQN 313', 100);
+INSERT INTO location (name, city, state, address, capacity)
+VALUES ('Quadra de Tênis', 'Brasília', 'Distrito Federal', 'Setor Hab Ind Sul', 200);
+
+INSERT INTO match ()
+VALUES ();
 
 END;
