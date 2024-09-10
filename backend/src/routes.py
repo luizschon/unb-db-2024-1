@@ -25,6 +25,7 @@ class Router:
         # Tournament Actions
         ("GET", r"/tournament/?$"): lambda _m, _: TournamentController.index(),
         ("GET", r"/tournament/(?P<id>\d+)/?$"): lambda m, _: TournamentController.show(int(m.group('id'))),
+        ("GET", r"/tournament/(?P<id>\d+)/matches/?$"): lambda m, _: TournamentController.get_matches(int(m.group('id'))),
         ("GET", r"/tournament/(?P<id>\d+)/ranking/?$"): lambda m, _: TournamentController.get_ranking(int(m.group('id'))),
         ("GET", r"/tournament/(?P<id>\d+)/modality/?$"): lambda m, _: TournamentController.get_modality((m.group('id'))),
         ("POST", r"/tournament/?$"): lambda _, data: TournamentController.create(data),

@@ -98,3 +98,32 @@ class Match:
             DatabaseConnection().commit()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+
+    @staticmethod
+    def where(data):
+        # Filtra valores recebidos que não pertencem ao schema da tabela Match
+        # e transforma em lista de tuplas
+        items = [(k, v) for k, v in data.items() if k in MATCH_UPDATE_SCHEMA]
+
+        try:
+            with DatabaseConnection().cursor() as cur:
+                query = sql.SQL("""
+                    SELECT * from match WHERE {conditions}
+                """).format(
+                    conditions=sql.SQL(' AND ').join(
+                        list(map(
+                            lambda i: sql.SQL("{} = {}").format(
+                                sql.Identifier(i[0]), sql.Literal(i[1])
+                            ),
+                            items
+                        ))
+                    )
+                )
+                print(query.as_string())
+                cur.execute(query)
+                return cur.fetchall()
+        except OperationalError:
+            raise(ModelError("no database connection", "00000"))
+        except DatabaseError as err:
+            DatabaseConnection().rollback()
+            raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))

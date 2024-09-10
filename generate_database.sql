@@ -164,7 +164,7 @@ RETURNS trigger AS $$
 BEGIN
     IF NEW.winner_id IS NOT NULL AND CURRENT_TIMESTAMP AT TIME ZONE 'UTC' <= upper(NEW.duration) THEN
         RAISE EXCEPTION 'Updates to winner column are not allowed before match end';
-    ELSEIF NEW.winner_id IS NOT NULL AND NEW.winner_id != NEW.team1_id OR NEW.winner_id != NEW.team2_id THEN
+    ELSEIF NEW.winner_id IS NOT NULL AND NEW.winner_id != NEW.team1_id AND NEW.winner_id != NEW.team2_id THEN
         RAISE EXCEPTION 'Winner should be one of the competing teams';
     END IF;
     RETURN NEW;
@@ -179,12 +179,13 @@ EXECUTE FUNCTION prevent_update_winner_before_match_end();
 CREATE OR REPLACE FUNCTION prevent_update_score_before_match()
 RETURNS trigger AS $$
 BEGIN
-    IF NEW.team1_score != OLD.team1_score OR NEW.team2_score != OLD.team2_score
-    AND CURRENT_TIMESTAMP AT TIME ZONE 'UTC' < lower(NEW.duration) THEN
-        RAISE EXCEPTION 'Scores can only be updated during and after the match';
+    IF (NEW.team1_score != OLD.team1_score OR NEW.team2_score != OLD.team2_score) THEN
+        IF CURRENT_TIMESTAMP AT TIME ZONE 'UTC' < lower(NEW.duration) THEN
+            RAISE EXCEPTION 'Scores can only be updated during and after the match';
+        END IF;
+        -- Reseta winner pra ser atualizado pelo procedure
+        NEW.winner_id := NULL;
     END IF;
-    -- Reseta winner pra ser atualizado pelo procedure
-    NEW.winner_id := NULL;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -202,7 +203,7 @@ BEGIN
         FROM match
         WHERE location_id = NEW.location_id
         AND NEW.duration && duration
-    ) THEN
+    ) AND NEW.location_id != OLD.location_id THEN
         RAISE EXCEPTION 'Match overlaps with another match with same location.';
     END IF;
     IF EXISTS (
@@ -210,7 +211,7 @@ BEGIN
         FROM match
         WHERE referee_cpf = NEW.referee_cpf
         AND NEW.duration && duration
-    ) THEN
+    ) AND NEW.referee_cpf != OLD.referee_cpf THEN
         RAISE EXCEPTION 'Match overlaps with another match with same referee.';
     END IF;
     IF EXISTS (
@@ -219,7 +220,7 @@ BEGIN
         WHERE (team1_id IN (NEW.team1_id, NEW.team2_id)
         OR team2_id IN (NEW.team1_id, NEW.team2_id))
         AND NEW.duration && duration
-    ) THEN
+    ) AND (NEW.team1_id != OLD.team1_id OR NEW.team2_id != OLD.team2_id) THEN
         RAISE EXCEPTION 'Match overlaps with another match with same team.';
     END IF;
 
@@ -262,16 +263,15 @@ EXECUTE FUNCTION prevent_invalid_team_matches();
 CREATE OR REPLACE PROCEDURE update_winners_and_scores()
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    winners numeric[];
 BEGIN
     -- Preenche winner_id baseado no placar
-    UPDATE match SET winner_id = CASE
+    UPDATE match
+    SET winner_id = CASE
         WHEN team1_score > team2_score THEN team1_id
         WHEN team1_score < team2_score THEN team2_id
         ELSE NULL
-    END WHERE CURRENT_TIMESTAMP AT TIME ZONE 'UTC' > upper(duration)
-    AND winner_id IS NULL;
+    END WHERE winner_id IS NULL
+    AND upper(duration) < CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
 
     -- Atualiza o placar no ranking contando a quantidade
     -- de vezes que uma equipe ganhou
@@ -279,10 +279,10 @@ BEGIN
     FROM (
         SELECT tournament_id, winner_id, COUNT(*) AS points
         FROM match
-        GROUP BY tournament_id, winner_id
+        GROUP BY (tournament_id, winner_id)
     ) AS win_counts
-    WHERE ranking.tounament_id = win_counts.tournament_id
-    AND ranking.team_id = win_counts.team_id;
+    WHERE ranking.tournament_id = win_counts.tournament_id
+    AND ranking.team_id = win_counts.winner_id;
 END;
 $$;
 
@@ -460,7 +460,7 @@ VALUES ('[2024-09-10 13:30, 2024-09-10 14:30]', 1, 1, 3, 2, '55555555555');
 INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
 VALUES ('[2024-09-10 15:00, 2024-09-10 16:00]', 1, 2, 3, 1, '11111111111');
 INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
-VALUES ('[2024-09-11 9:00, 2024-09-11 10:00]', 2, 4, 5, 3, '22222222222');
+VALUES ('[2024-09-09 9:00, 2024-09-09 10:00]', 2, 4, 5, 3, '22222222222');
 INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
 VALUES ('[2024-09-11 10:30, 2024-09-11 11:30]', 3, 1, 5, 4, '33333333333');
 INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)

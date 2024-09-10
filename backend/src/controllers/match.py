@@ -5,6 +5,7 @@ from src.models.error import ModelError
 from src.types import RouterReponse
 from src.models.match import Match
 from src.models.views import FinishedMatches, OngoingMatches, UpcomingMatches
+from src.models.procedures import UpdateRankings
 
 class MatchController:
     @staticmethod
@@ -16,6 +17,7 @@ class MatchController:
                 range = r["duration"]
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
+            UpdateRankings.run()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -31,6 +33,7 @@ class MatchController:
             if result:
                 result = result | parse_tsrange(result["duration"])
                 del result["duration"]
+            UpdateRankings.run()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -46,6 +49,7 @@ class MatchController:
             if result:
                 result = result | parse_tsrange(result["duration"])
                 del result["duration"]
+            UpdateRankings.run()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -61,6 +65,7 @@ class MatchController:
             if result:
                 result = result | parse_tsrange(result["duration"])
                 del result["duration"]
+            UpdateRankings.run()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -73,6 +78,7 @@ class MatchController:
     def destroy(id) -> RouterReponse:
         try:
             Match.delete(id)
+            UpdateRankings.run()
             return [200, { "status": "success", "response": None }]
         except ModelError as err:
             return [400, {
@@ -124,6 +130,7 @@ class MatchController:
                 range = r["duration"]
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
+            UpdateRankings.run()
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
