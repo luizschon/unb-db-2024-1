@@ -2,6 +2,7 @@ import psycopg
 from src.models.error import ModelError
 from src.types import RouterReponse
 from src.models.coach import Coach
+from src.models.team import Team
 
 class CoachController:
     @staticmethod
@@ -70,6 +71,21 @@ class CoachController:
             print("destroy cpf:", cpf)
             Coach.delete(cpf)
             return [200, { "status": "success", "response": None }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def get_team(cpf) -> RouterReponse:
+        try:
+            p = Coach.find_by_cpf(cpf)
+            result = {}
+            if p:
+                result = Team.find_by_id(p["team_id"])
+            return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
                 "status": "error",

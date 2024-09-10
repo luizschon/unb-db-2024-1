@@ -3,6 +3,7 @@ from src.models.error import ModelError
 from src.types import RouterReponse
 from src.utils import encode_base64
 from src.models.player import Player
+from src.models.team import Team
 
 class PlayerController:
     @staticmethod
@@ -84,6 +85,21 @@ class PlayerController:
             # Faz parse da data para usar formato ISO 8601
             if result:
                 result["photo"] = encode_base64(result["photo"])
+            return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def get_team(cpf) -> RouterReponse:
+        try:
+            p = Player.find_by_cpf(cpf)
+            result = {}
+            if p:
+                result = Team.find_by_id(p["team_id"])
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {

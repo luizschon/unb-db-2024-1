@@ -41,6 +41,7 @@ class Router:
         # Coach Actions
         ("GET", r"/coach/?$"): lambda _m, _: CoachController.index(),
         ("GET", r"/coach/(?P<cpf>\d+)/?$"): lambda m, _: CoachController.show(m.group('cpf')),
+        ("GET", r"/coach/(?P<cpf>\d+)/team/?$"): lambda m, _: CoachController.get_team(m.group('cpf')),
         ("POST", r"/coach/?$"): lambda _, data: CoachController.create(data),
         ("PATCH", r"/coach/(?P<cpf>\d+)/?$"): lambda m, data: CoachController.update(m.group('cpf'), data),
         ("DELETE", r"/coach/(?P<cpf>\d+)/?$"): lambda m, _: CoachController.destroy(m.group('cpf')),
@@ -48,6 +49,7 @@ class Router:
         # Player Actions
         ("GET", r"/player/?$"): lambda _m, _: PlayerController.index(),
         ("GET", r"/player/(?P<cpf>\d+)/?$"): lambda m, _: PlayerController.show(m.group('cpf')),
+        ("GET", r"/player/(?P<cpf>\d+)/team/?$"): lambda m, _: PlayerController.get_team(m.group('cpf')),
         ("GET", r"/player/(?P<cpf>\d+)/photo/?$"): lambda m, _: PlayerController.get_photo(m.group('cpf')),
         ("POST", r"/player/?$"): lambda _, data: PlayerController.create(data),
         ("PATCH", r"/player/(?P<cpf>\d+)/?$"): lambda m, data: PlayerController.update(m.group('cpf'), data),
