@@ -2,7 +2,7 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-PLAYER_SCHEMA = ('cpf', 'name', 'birthdate', 'starting', 'photo', 'team_id')
+PLAYER_SCHEMA = ('cpf', 'name', 'birthdate', 'starting', 'photo', 'filetype', 'team_id')
 
 class Player:
     @staticmethod
@@ -115,3 +115,6 @@ class Player:
             DatabaseConnection().commit()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+        except DatabaseError as err:
+            DatabaseConnection().rollback()
+            raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))

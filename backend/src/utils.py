@@ -11,7 +11,6 @@ def parse_formdata(decoded_multipart):
         disposition_data = {}
 
         for field in disposition_string[1:]:
-            print(field)
             split = field.split('=', 1)
             key = split[0]
             value = split[1][1:-1]
@@ -19,12 +18,12 @@ def parse_formdata(decoded_multipart):
 
         name = disposition_data.get('name')
         filename = disposition_data.get('filename')
-        print(name)
 
         if filename:
+            data['filetype'] = filename.split('.')[-1].strip()
             data[name] = part.content
         else:
-            data[name] = part.text
+            data[name] = part.text.strip()
 
     return data
 

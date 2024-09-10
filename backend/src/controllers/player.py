@@ -10,10 +10,17 @@ class PlayerController:
     def index() -> RouterReponse:
         try:
             result = Player.all()
-            # Faz parse da data para usar formato ISO 8601
+            response = []
             for r in result:
+                # Faz parse da data para usar formato ISO 8601
                 r["birthdate"] = r["birthdate"].isoformat()
-            return [200, { "status": "success", "response": result }]
+                team_id = r["team_id"]
+                del r["team_id"]
+                if team_id:
+                    team = Team.find_by_id(team_id)
+                    r = r | { "team": team }
+                response.append(r)
+            return [200, { "status": "success", "response": response }]
         except ModelError as err:
             return [400, {
                 "status": "error",
@@ -28,6 +35,11 @@ class PlayerController:
             # Faz parse da data para usar formato ISO 8601
             if result:
                 result["birthdate"] = result["birthdate"].isoformat()
+                team_id = result["team_id"]
+                del result["team_id"]
+                if team_id:
+                    team = Team.find_by_id(team_id)
+                    result = result | { "team": team }
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -43,6 +55,11 @@ class PlayerController:
             # Faz parse da data para usar formato ISO 8601
             if result:
                 result["birthdate"] = result["birthdate"].isoformat()
+                team_id = result["team_id"]
+                del result["team_id"]
+                if team_id:
+                    team = Team.find_by_id(team_id)
+                    result = result | { "team": team }
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -58,6 +75,11 @@ class PlayerController:
             # Faz parse da data para usar formato ISO 8601
             if result:
                 result["birthdate"] = result["birthdate"].isoformat()
+                team_id = result["team_id"]
+                del result["team_id"]
+                if team_id:
+                    team = Team.find_by_id(team_id)
+                    result = result | { "team": team }
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -81,8 +103,7 @@ class PlayerController:
     @staticmethod
     def get_photo(cpf) -> RouterReponse:
         try:
-            result = Player.get_fields_by_cpf(cpf, "photo")
-            # Faz parse da data para usar formato ISO 8601
+            result = Player.get_fields_by_cpf(cpf, "filetype", "photo")
             if result:
                 result["photo"] = encode_base64(result["photo"])
             return [200, { "status": "success", "response": result }]

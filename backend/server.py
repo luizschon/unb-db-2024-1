@@ -13,7 +13,6 @@ server_address = (
 
 class RequestHandler(BaseHTTPRequestHandler):
     def parse_data(self):
-        print(self.headers["Content-Type"])
         content_type = self.headers["Content-Type"]
         content_len = int(self.headers['Content-Length'])
         body = self.rfile.read(content_len)

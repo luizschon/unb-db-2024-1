@@ -38,7 +38,8 @@ CREATE TABLE team
 (
     id serial PRIMARY KEY,
     name character varying(50) NOT NULL,
-    logo bytea NOT NULL
+    logo bytea NOT NULL,
+    filetype character varying(5) NOT NULL
 );
 
 CREATE TABLE ranking
@@ -88,6 +89,7 @@ CREATE TABLE player
     birthdate date NOT NULL,
     starting boolean DEFAULT false,
     photo bytea NOT NULL,
+    filetype character varying(5) NOT NULL,
     team_id integer NOT NULL REFERENCES team (id) ON DELETE CASCADE
 );
 
@@ -103,7 +105,8 @@ CREATE TABLE sponsor
 (
     cnpj character(14) PRIMARY KEY,
     name character varying(50) NOT NULL,
-    logo bytea NOT NULL
+    logo bytea NOT NULL,
+    filetype character varying(5) NOT NULL
 );
 
 CREATE TABLE sponsorship
@@ -297,16 +300,16 @@ VALUES ('Evento mais ou menos', '2024-09-10');
 INSERT INTO event (name, date)
 VALUES ('Evento supimpa', '2024-09-10');
 
-INSERT INTO sponsor (cnpj, name, logo)
-VALUES ('11111111111111', 'Parrot Co.', pg_read_binary_file('parrot.png'));
-INSERT INTO sponsor (cnpj, name, logo)
-VALUES ('22222222222222', 'Fakestate Inc.', pg_read_binary_file('fakestate.png'));
-INSERT INTO sponsor (cnpj, name, logo)
-VALUES ('33333333333333', 'Green Company', pg_read_binary_file('green.jpg'));
-INSERT INTO sponsor (cnpj, name, logo)
-VALUES ('44444444444444', 'Triag Co.', pg_read_binary_file('triangle.png'));
-INSERT INTO sponsor (cnpj, name, logo)
-VALUES ('55555555555555', 'Gear SA', pg_read_binary_file('gearing.png'));
+INSERT INTO sponsor (cnpj, name, logo, filetype)
+VALUES ('11111111111111', 'Parrot Co.', pg_read_binary_file('parrot.png'), 'png');
+INSERT INTO sponsor (cnpj, name, logo, filetype)
+VALUES ('22222222222222', 'Fakestate Inc.', pg_read_binary_file('fakestate.png'), 'png');
+INSERT INTO sponsor (cnpj, name, logo, filetype)
+VALUES ('33333333333333', 'Green Company', pg_read_binary_file('green.jpg'), 'png');
+INSERT INTO sponsor (cnpj, name, logo, filetype)
+VALUES ('44444444444444', 'Triag Co.', pg_read_binary_file('triangle.png'), 'png');
+INSERT INTO sponsor (cnpj, name, logo, filetype)
+VALUES ('55555555555555', 'Gear SA', pg_read_binary_file('gearing.png'), 'png');
 
 INSERT INTO sponsorship
 VALUES (1, '11111111111111', 1000);
@@ -353,16 +356,16 @@ VALUES (4, 4);
 INSERT INTO tournament (event_id, modality_id)
 VALUES (5, 3);
 
-INSERT INTO team (name, logo)
-VALUES ('Panda', pg_read_binary_file('pandas.png'));
-INSERT INTO team (name, logo)
-VALUES ('Hollow', pg_read_binary_file('hollow.png'));
-INSERT INTO team (name, logo)
-VALUES ('Postgres', pg_read_binary_file('postgres.png'));
-INSERT INTO team (name, logo)
-VALUES ('Tatu Bolas', pg_read_binary_file('tatu_bolas.png'));
-INSERT INTO team (name, logo)
-VALUES ('Caveiras', pg_read_binary_file('caveiras.png'));
+INSERT INTO team (name, logo, filetype)
+VALUES ('Panda', pg_read_binary_file('pandas.png'), 'png');
+INSERT INTO team (name, logo, filetype)
+VALUES ('Hollow', pg_read_binary_file('hollow.png'), 'png');
+INSERT INTO team (name, logo, filetype)
+VALUES ('Postgres', pg_read_binary_file('postgres.png'), 'png');
+INSERT INTO team (name, logo, filetype)
+VALUES ('Tatu Bolas', pg_read_binary_file('tatu_bolas.png'), 'png');
+INSERT INTO team (name, logo, filetype)
+VALUES ('Caveiras', pg_read_binary_file('caveiras.png'), 'png');
 
 INSERT INTO ranking (tournament_id, team_id)
 VALUES (1, 1);
@@ -426,21 +429,21 @@ INSERT INTO coach
 VALUES ('10000000003', 'Paula Brago', '1990-07-06', 3);
 
 INSERT INTO player
-VALUES ('10000000004', 'Rodolfo Nogueira', '2000-08-27', true, pg_read_binary_file('person1.jpg'), 1);
+VALUES ('10000000004', 'Rodolfo Nogueira', '2000-08-27', true, pg_read_binary_file('person1.jpg'), 'jpg', 1);
 INSERT INTO player
-VALUES ('10000000005', 'Filipe Souza', '2003-09-10', false, pg_read_binary_file('person2.jpg'), 1);
+VALUES ('10000000005', 'Filipe Souza', '2003-09-10', false, pg_read_binary_file('person2.jpg'), 'jpg', 1);
 INSERT INTO player
-VALUES ('10000000006', 'Hudson Machado', '1997-12-14', true, pg_read_binary_file('person3.jpg'), 2);
+VALUES ('10000000006', 'Hudson Machado', '1997-12-14', true, pg_read_binary_file('person3.jpg'), 'jpg', 2);
 INSERT INTO player
-VALUES ('10000000007', 'Fernanda Rodrigues', '1996-10-01', false, pg_read_binary_file('person4.jpg'), 2);
+VALUES ('10000000007', 'Fernanda Rodrigues', '1996-10-01', false, pg_read_binary_file('person4.jpg'), 'jpg', 2);
 INSERT INTO player
-VALUES ('10000000008', 'Rodrigo Oliveira', '2001-12-25', false, pg_read_binary_file('person5.jpg'), 3);
+VALUES ('10000000008', 'Rodrigo Oliveira', '2001-12-25', false, pg_read_binary_file('person5.jpg'), 'jpg', 3);
 INSERT INTO player
-VALUES ('10000000009', 'Carlos Frei', '2001-11-09', true, pg_read_binary_file('person6.jpg'), 3);
+VALUES ('10000000009', 'Carlos Frei', '2001-11-09', true, pg_read_binary_file('person6.jpg'), 'jpg', 3);
 INSERT INTO player
-VALUES ('10000000010', 'Luisa Ferreira', '2002-01-01', true, pg_read_binary_file('person7.jpg'), 4);
+VALUES ('10000000010', 'Luisa Ferreira', '2002-01-01', true, pg_read_binary_file('person7.jpg'), 'jpg', 4);
 INSERT INTO player
-VALUES ('10000000011', 'Pedro de Jesus', '2005-04-10', true, pg_read_binary_file('person8.jpg'), 5);
+VALUES ('10000000011', 'Pedro de Jesus', '2005-04-10', true, pg_read_binary_file('person8.jpg'), 'jpg', 5);
 
 INSERT INTO location (name, city, state, address, capacity)
 VALUES ('Mané Garrincha', 'Brasília', 'Distrito Federal', 'SRPN Estádio Nacional Mané Garrincha', 69910);

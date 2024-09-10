@@ -70,7 +70,7 @@ class TeamController:
     @staticmethod
     def get_logo(id) -> RouterReponse:
         try:
-            result = Team.get_fields_by_id(id, "logo")
+            result = Team.get_fields_by_id(id, "filetype", "logo")
             if result:
                 result["logo"] = encode_base64(result["logo"])
             return [200, { "status": "success", "response": result }]

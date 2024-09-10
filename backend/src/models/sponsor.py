@@ -2,7 +2,7 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-SPONSOR_SCHEMA = ('cnpj', 'name', 'logo')
+SPONSOR_SCHEMA = ('cnpj', 'name', 'logo', 'filetype')
 
 class Sponsor:
     @staticmethod

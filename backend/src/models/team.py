@@ -2,7 +2,7 @@ from psycopg import sql, OperationalError, DatabaseError
 from src.database import DatabaseConnection
 from src.models.error import ModelError
 
-TEAM_SCHEMA = ('name', 'logo')
+TEAM_SCHEMA = ('name', 'logo', 'filetype')
 
 class Team:
     @staticmethod
