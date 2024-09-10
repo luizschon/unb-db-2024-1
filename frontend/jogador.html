@@ -1,88 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Jogadores - Sistema de Gerenciamento de Eventos Esportivos</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input[type="text"], input[type="date"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-        }
-        input[type="submit"] {
-            background-color: #0066cc;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
-</head>
-<body>
-    <h1>Gerenciar Jogadores</h1>
-    
-    <h2>Adicionar Novo Jogador</h2>
-    <form id="addPlayerForm">
-        <label for="playerName">Nome do Jogador:</label>
-        <input type="text" id="playerName" name="playerName" required>
-        
-        <label for="playerBirthDate">Data de Nascimento:</label>
-        <input type="date" id="playerBirthDate" name="playerBirthDate" required>
-        
-        <label for="playerPosition">Posição:</label>
-        <input type="text" id="playerPosition" name="playerPosition" required>
-        
-        <input type="submit" value="Adicionar Jogador">
-    </form>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            Gerenciar Jogadores - Sistema de Gerenciamento de Eventos Esportivos
+        </title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+            }
+            h1,
+            h2 {
+                color: #333;
+            }
+            form {
+                margin-bottom: 20px;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+            input[type="text"],
+            input[type="date"] {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+            input[type="submit"] {
+                background-color: #0066cc;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                cursor: pointer;
+            }
+            input[type="submit"]:hover {
+                background-color: #0056b3;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th,
+            td {
+                padding: 10px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            img {
+                max-width: 100px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Gerenciar Jogadores</h1>
 
-    <h2>Lista de Jogadores</h2>
-    <table id="playerTable">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Data de Nascimento</th>
-                <th>Posição</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
+        <h2>Adicionar Novo Jogador</h2>
+        <form id="addPlayerForm">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf" required />
 
-    <script>
-        
-    </script>
-</body>
+            <label for="name">Nome do jogador:</label>
+            <input type="text" id="name" name="name" required />
+
+            <label for="birthdate">Data de Nascimento:</label>
+            <input type="date" id="birthdate" name="birthdate" required />
+
+            <label for="team">Time:</label>
+            <select id="team" name="team" required />
+
+            <input
+                type="checkbox"
+                id="starting"
+                name="starting"
+                value="true"
+                required
+            >Titular</input>
+
+            <label for="photo">Foto:</label>
+            <input type="file" id="photo" name="photo" required />
+
+            <input type="submit" value="Adicionar Jogador" />
+        </form>
+
+        <h2>Lista de Jogadores</h2>
+        <table id="playerTable">
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Nome</th>
+                    <th>Data de Nascimento</th>
+                    <th>Time</th>
+                    <th>Titular?</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <script>
+            const API_URL = "http://localhost:8000/player/";
+            let players = [];
+
+            // Funções auxiliares
+            const formatDate = (date) => moment(date).format("DD/MM/YYYY");
+            const resetForm = () => {
+                document.getElementById("addPlayerForm").reset();
+                document.getElementById("cpf").value = "";
+            };
+
+            // Carregar eventos
+            const loadPlayers = async () => {
+                try {
+                    const response = await axios.get(API_URL);
+                    console.log(response)
+                    res = response.data.response;
+                    players = res;
+                    renderPlayers();
+                    const promises = players.map(async (p) => {
+                        axios.get(API_URL + p.cpf + "/photo").then((result) => {
+                            let i = players.findIndex((_p) => _p.cpf === p.cpf);
+                            if (i >= 0) {
+                                players[i].photo = result.data.response.photo;
+                                players[i].filetype = result.data.response.filetype;
+                            }
+                            renderPlayers();
+                        });
+                    });
+                } catch (error) {
+                    console.error("Erro ao carregar jogadores:", error);
+                }
+            };
+
+            // Renderizar eventos na tabela
+            const renderPlayers = () => {
+                const tbody = document.querySelector("#playerTable tbody");
+                console.log(players);
+                tbody.innerHTML = players
+                    .map(
+                        (player) => `
+                <tr>
+                    <td><img src="data:image/${player.filetype};base64,${player.photo}" alt="photo"/></td>
+                    <td>${player.name}</td>
+                    <td>${formatDate(player.birthdate)}</td>
+                    <td>${player.team.name}</td>
+                    <td>${player.starting ? "Sim" : "Não"}</td>
+                    <td>
+                        <button onclick="editPlayer(${player.cpf})">Editar</button>
+                        <button onclick="deletePlayer(${player.cpf})">Excluir</button>
+                    </td>
+                </tr>
+            `,
+                    )
+                    .join("");
+            };
+
+            const loadTeams = async () => {
+                const url = 'http://localhost:8000/team/'
+                const selectElement = document.getElementById('team');
+
+                try {
+                    const response = await axios.get(url);
+                    const teams = response.data.response
+
+                    selectElement.innerHTML = '';
+
+                    teams.forEach(team => {
+                        const newOption = document.createElement('option');
+                        newOption.value = team.id;  // Set the value to the 'id'
+                        newOption.text = team.name; // Set the text to the 'name'
+                        selectElement.appendChild(newOption);
+                    });
+                } catch (error) {
+                    selectElement.innerHTML = '<option value="">Failed to load options</option>';
+                    console.error(error);
+                }
+            }
+
+            // Salvar ou atualizar evento
+            const savePlayer = async (event) => {
+                event.preventDefault();
+                const cpf = document.getElementById("cpf").value;
+                const name = document.getElementById("name").value;
+                const birthdate = document.getElementById("birthdate").value;
+                const starting = document.getElementById("starting").value ? true : false;
+                const team_id = document.getElementById("team").value;
+                const photo_input = document.getElementById("photo");
+
+                const formdata = new FormData()
+                formdata.append('cpf', cpf)
+                formdata.append('name', name)
+                formdata.append('birthdate', birthdate)
+                formdata.append('starting', starting)
+                formdata.append('team_id', team_id)
+
+                if (photo_input.files.length === 1) {
+                  const photo = photo_input.files[0]
+                  formdata.append('photo', photo)
+                }
+
+                console.log(formdata)
+
+                try {
+                    if (players.find(p => p.cpf === cpf)) {
+                        await axios.patch(`${API_URL}/${cpf}`, formdata, {
+                          headers: {
+                            'Content-Type': 'multipart/form-data'
+                          }
+                        });
+                    } else {
+                        await axios.post(API_URL, formdata, {
+                          headers: {
+                            'Content-Type': 'multipart/form-data'
+                          }
+                        });
+                    }
+                    resetForm();
+                    loadPlayers();
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+
+            // Editar player
+            const editPlayer = (cpf) => {
+                const player = players.find((p) => {
+                    console.log(p.cpf)
+                    console.log(cpf)
+                    return p.cpf === cpf.toString()
+                  }
+                );
+                if (player) {
+                    document.getElementById("cpf").value = player.cpf;
+                    document.getElementById("nome").value = player.name;
+                    document.getElementById("starting").value = player.starting;
+                    document.getElementById("birthdate").value = moment(
+                        player.date,
+                    ).format("YYYY-MM-DD");
+                } else {
+                  console.log("nao achei")
+                }
+            };
+
+            // Excluir player
+            const deletePlayer = async (cpf) => {
+                if (confirm("Tem certeza que deseja excluir este evento?")) {
+                    try {
+                        axios.delete(`${API_URL}${cpf}`).then((result) => {
+                          console.log(result)
+                            if (result.status === 200) {
+                                players = players.filter((p) => p.cpf !== cpf.toString())
+                                renderPlayers();
+                            }
+                        });
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+            };
+
+            // Event listeners
+            document
+                .getElementById("addPlayerForm")
+                .addEventListener("submit", savePlayer);
+            document.addEventListener("DOMContentLoaded", loadPlayers);
+            document.addEventListener("DOMContentLoaded", loadTeams);
+        </script>
+    </body>
 </html>
