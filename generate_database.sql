@@ -275,9 +275,9 @@ BEGIN
 
     -- Atualiza o placar no ranking contando a quantidade
     -- de vezes que uma equipe ganhou
-    UPDATE ranking SET score = win_counts.score
+    UPDATE ranking SET points = win_counts.points
     FROM (
-        SELECT tournament_id, winner_id, COUNT(*) AS score
+        SELECT tournament_id, winner_id, COUNT(*) AS points
         FROM match
         GROUP BY tournament_id, winner_id
     ) AS win_counts
