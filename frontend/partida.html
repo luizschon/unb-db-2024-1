@@ -21,19 +21,19 @@
             display: block;
             margin-bottom: 5px;
         }
-        input[type="text"], input[type="date"], input[type="time"] {
+        input[type="text"], input[type="date"], input[type="time"], select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
         }
-        input[type="submit"] {
+        input[type="submit"], button {
             background-color: #0066cc;
             color: white;
             padding: 10px 15px;
             border: none;
             cursor: pointer;
         }
-        input[type="submit"]:hover {
+        input[type="submit"]:hover, button:hover {
             background-color: #0056b3;
         }
         table {
@@ -48,18 +48,54 @@
         th {
             background-color: #f2f2f2;
         }
+        .action-btn {
+            margin-right: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>Gerenciar Partidas</h1>
     
     <h2>Adicionar Nova Partida</h2>
-    <form id="addMatchForm">
+    <form id="matchForm">
+        <input type="hidden" id="matchId" name="matchId">
         <label for="homeTeam">Equipe da Casa:</label>
-        <input type="text" id="homeTeam" name="homeTeam" required>
+        <select id="homeTeam" name="homeTeam" required></select>
         
         <label for="awayTeam">Equipe Visitante:</label>
-        <input type="text" id="awayTeam" name="awayTeam" required>
+        <select id="awayTeam" name="awayTeam" required></select>
         
         <label for="matchDate">Data:</label>
         <input type="date" id="matchDate" name="matchDate" required>
@@ -67,10 +103,16 @@
         <label for="matchTime">Horário:</label>
         <input type="time" id="matchTime" name="matchTime" required>
         
-        <label for="matchResult">Resultado:</label>
-        <input type="text" id="matchResult" name="matchResult">
+        <label for="tournament">Torneio:</label>
+        <select id="tournament" name="tournament" required></select>
         
-        <input type="submit" value="Adicionar Partida">
+        <label for="referee">Árbitro:</label>
+        <select id="referee" name="referee" required></select>
+        
+        <label for="local">Local:</label>
+        <select id="local" name="local" required></select>
+        
+        <input type="submit" id="submitBtn" value="Adicionar Partida">
     </form>
 
     <h2>Lista de Partidas</h2>
@@ -81,6 +123,9 @@
                 <th>Equipe Visitante</th>
                 <th>Data</th>
                 <th>Horário</th>
+                <th>Torneio</th>
+                <th>Árbitro</th>
+                <th>Local</th>
                 <th>Resultado</th>
                 <th>Ações</th>
             </tr>
@@ -89,7 +134,181 @@
         </tbody>
     </table>
 
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Definir Resultado</h2>
+            <form id="resultForm">
+                <input type="hidden" id="resultMatchId">
+                <label for="homeScore">Placar Equipe da Casa:</label>
+                <input type="number" id="homeScore" name="homeScore" required min="0">
+                <label for="awayScore">Placar Equipe Visitante:</label>
+                <input type="number" id="awayScore" name="awayScore" required min="0">
+                <button type="submit">Salvar Resultado</button>
+            </form>
+        </div>
+    </div>
+
     <script>
+        let currentMatches = [];
+
+        // Função para carregar as partidas
+        function loadMatches() {
+            fetch('/match')
+                .then(response => response.json())
+                .then(matches => {
+                    currentMatches = matches;
+                    const tableBody = document.querySelector('#matchTable tbody');
+                    tableBody.innerHTML = '';
+                    matches.forEach(match => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${match.homeTeam}</td>
+                            <td>${match.awayTeam}</td>
+                            <td>${match.date}</td>
+                            <td>${match.time}</td>
+                            <td>${match.tournament}</td>
+                            <td>${match.referee}</td>
+                            <td>${match.local}</td>
+                            <td>${match.result || 'Não definido'}</td>
+                            <td>
+                                <button class="action-btn" onclick="editMatch(${match.id})">Editar</button>
+                                <button class="action-btn" onclick="deleteMatch(${match.id})">Excluir</button>
+                                <button class="action-btn" onclick="openResultModal(${match.id})">Definir Resultado</button>
+                            </td>
+                        `;
+                    });
+                });
+        }
+
+        // Função para carregar os dados dos selects
+        function loadSelectData() {
+            fetch('/team')
+                .then(response => response.json())
+                .then(teams => {
+                    const homeTeamSelect = document.getElementById('homeTeam');
+                    const awayTeamSelect = document.getElementById('awayTeam');
+                    teams.forEach(team => {
+                        const option = new Option(team.name, team.id);
+                        homeTeamSelect.add(option.cloneNode(true));
+                        awayTeamSelect.add(option);
+                    });
+                });
+
+            fetch('/tournament')
+                .then(response => response.json())
+                .then(tournaments => {
+                    const tournamentSelect = document.getElementById('tournament');
+                    tournaments.forEach(tournament => {
+                        tournamentSelect.add(new Option(tournament.name, tournament.id));
+                    });
+                });
+
+            fetch('/coach')
+                .then(response => response.json())
+                .then(referees => {
+                    const refereeSelect = document.getElementById('referee');
+                    referees.forEach(referee => {
+                        refereeSelect.add(new Option(referee.name, referee.cpf));
+                    });
+                });
+
+            fetch('/local')
+                .then(response => response.json())
+                .then(locals => {
+                    const localSelect = document.getElementById('local');
+                    locals.forEach(local => {
+                        localSelect.add(new Option(local.name, local.id));
+                    });
+                });
+        }
+
+        // Função para adicionar ou atualizar uma partida
+        document.getElementById('matchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const matchId = formData.get('matchId');
+            const url = matchId ? `/match/${matchId}` : '/match';
+            const method = matchId ? 'PATCH' : 'POST';
+
+            fetch(url, {
+                method: method,
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadMatches();
+                this.reset();
+                document.getElementById('matchId').value = '';
+                document.getElementById('submitBtn').value = 'Adicionar Partida';
+            });
+        });
+
+        // Função para editar uma partida
+        function editMatch(id) {
+            const match = currentMatches.find(m => m.id === id);
+            if (match) {
+                document.getElementById('matchId').value = match.id;
+                document.getElementById('homeTeam').value = match.homeTeam;
+                document.getElementById('awayTeam').value = match.awayTeam;
+                document.getElementById('matchDate').value = match.date;
+                document.getElementById('matchTime').value = match.time;
+                document.getElementById('tournament').value = match.tournament;
+                document.getElementById('referee').value = match.referee;
+                document.getElementById('local').value = match.local;
+                document.getElementById('submitBtn').value = 'Atualizar Partida';
+            }
+        }
+
+        // Função para excluir uma partida
+        function deleteMatch(id) {
+            if (confirm('Tem certeza que deseja excluir esta partida?')) {
+                fetch(`/match/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(() => loadMatches());
+            }
+        }
+
+        // Função para abrir o modal de resultado
+        function openResultModal(id) {
+            document.getElementById('resultMatchId').value = id;
+            document.getElementById('resultModal').style.display = 'block';
+        }
+
+        // Função para fechar o modal de resultado
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        // Função para definir o resultado
+        document.getElementById('resultForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const matchId = document.getElementById('resultMatchId').value;
+            const homeScore = document.getElementById('homeScore').value;
+            const awayScore = document.getElementById('awayScore').value;
+            const result = `${homeScore} - ${awayScore}`;
+
+            fetch(`/match/${matchId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ result: result }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadMatches();
+                document.getElementById('resultModal').style.display = 'none';
+            });
+        });
+
+        // Carregar dados iniciais
+        loadSelectData();
+        loadMatches();
     </script>
 </body>
 </html>
