@@ -12,22 +12,27 @@ server_address = (
 )
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def parse_data(self):
+        print(self.headers["Content-Type"])
+        content_type = self.headers["Content-Type"]
+        content_len = int(self.headers['Content-Length'])
+        body = self.rfile.read(content_len)
+
+        if content_type.startswith("application/json"):
+            try:
+                return json.loads(body)
+            except Exception:
+                raise
+        elif content_type.startswith("multipart/form-data"):
+            data = MultipartDecoder(body, content_type)
+            return parse_formdata(data)
+        else:
+            self.send_error(400)
+
     def _set_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
         self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept')
-
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self._set_cors_headers()
-        self.end_headers()
-
-    def parse_json_data(self):
-        try:
-            content_len = int(self.headers['Content-Length'])
-            return json.loads(self.rfile.read(content_len))
-        except Exception:
-            raise
 
     def finish_request(self, status, response):
         self.send_response(status)
@@ -39,6 +44,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self._set_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
         [status, response] = Router.handle_get(self.path)
