@@ -183,6 +183,8 @@ BEGIN
     AND CURRENT_TIMESTAMP AT TIME ZONE 'UTC' < lower(NEW.duration) THEN
         RAISE EXCEPTION 'Scores can only be updated during and after the match';
     END IF;
+    -- Reseta winner pra ser atualizado pelo procedure
+    NEW.winner_id := NULL;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -192,26 +194,108 @@ BEFORE INSERT OR UPDATE ON match
 FOR EACH ROW
 EXECUTE FUNCTION prevent_update_score_before_match();
 
-CREATE OR REPLACE PROCEDURE update_winners()
-LANGUAGE SQL
-BEGIN ATOMIC
+CREATE OR REPLACE FUNCTION prevent_overlapping_matches()
+RETURNS trigger AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM match
+        WHERE location_id = NEW.location_id
+        AND NEW.duration && duration
+    ) THEN
+        RAISE EXCEPTION 'Match overlaps with another match with same location.';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM match
+        WHERE referee_cpf = NEW.referee_cpf
+        AND NEW.duration && duration
+    ) THEN
+        RAISE EXCEPTION 'Match overlaps with another match with same referee.';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM match
+        WHERE (team1_id IN (NEW.team1_id, NEW.team2_id)
+        OR team2_id IN (NEW.team1_id, NEW.team2_id))
+        AND NEW.duration && duration
+    ) THEN
+        RAISE EXCEPTION 'Match overlaps with another match with same team.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER check_overlapping_matches
+BEFORE INSERT OR UPDATE ON match
+FOR EACH ROW
+EXECUTE FUNCTION prevent_overlapping_matches();
+
+CREATE OR REPLACE FUNCTION prevent_invalid_team_matches()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.team1_id = NEW.team2_id
+    OR NOT EXISTS (
+        SELECT 1
+        FROM ranking
+        WHERE NEW.tournament_id = tournament_id
+        AND team_id = NEW.team1_id
+    ) OR NOT EXISTS (
+        SELECT 1
+        FROM ranking
+        WHERE NEW.tournament_id = tournament_id
+        AND team_id = NEW.team2_id
+    ) THEN
+        RAISE EXCEPTION 'Teams not included in tournament.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER check_invalid_teams
+BEFORE INSERT OR UPDATE ON match
+FOR EACH ROW
+EXECUTE FUNCTION prevent_invalid_team_matches();
+
+CREATE OR REPLACE PROCEDURE update_winners_and_scores()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    winners numeric[];
+BEGIN
+    -- Preenche winner_id baseado no placar
     UPDATE match SET winner_id = CASE
         WHEN team1_score > team2_score THEN team1_id
         WHEN team1_score < team2_score THEN team2_id
         ELSE NULL
-    END WHERE CURRENT_TIMESTAMP AT TIME ZONE 'UTC' > upper(duration);
+    END WHERE CURRENT_TIMESTAMP AT TIME ZONE 'UTC' > upper(duration)
+    AND winner_id IS NULL;
+
+    -- Atualiza o placar no ranking contando a quantidade
+    -- de vezes que uma equipe ganhou
+    UPDATE ranking SET score = win_counts.score
+    FROM (
+        SELECT tournament_id, winner_id, COUNT(*) AS score
+        FROM match
+        GROUP BY tournament_id, winner_id
+    ) AS win_counts
+    WHERE ranking.tounament_id = win_counts.tournament_id
+    AND ranking.team_id = win_counts.team_id;
 END;
+$$;
 
 INSERT INTO event (name, date)
-VALUES ('Evento massa', '2024-08-27');
+VALUES ('Evento massa', '2024-09-10');
 INSERT INTO event (name, date)
-VALUES ('Evento legal', '2024-08-30');
+VALUES ('Evento legal', '2024-09-10');
 INSERT INTO event (name, date)
-VALUES ('Evento incrivel', '2024-09-03');
+VALUES ('Evento incrivel', '2024-09-10');
 INSERT INTO event (name, date)
-VALUES ('Evento mais ou menos', '2024-09-20');
+VALUES ('Evento mais ou menos', '2024-09-10');
 INSERT INTO event (name, date)
-VALUES ('Evento supimpa', '2024-09-20');
+VALUES ('Evento supimpa', '2024-09-10');
 
 INSERT INTO sponsor (cnpj, name, logo)
 VALUES ('11111111111111', 'Parrot Co.', pg_read_binary_file('parrot.png'));
@@ -256,8 +340,18 @@ VALUES ('Basquete', pg_read_binary_file('regulamento_basquete.pdf'));
 INSERT INTO modality (name, rules)
 VALUES ('Tênis', pg_read_binary_file('regulamento_tenis.pdf'));
 
--- INSERT INTO tournament ()
--- VALUES ();
+INSERT INTO tournament (event_id, modality_id)
+VALUES (1, 1);
+INSERT INTO tournament (event_id, modality_id)
+VALUES (2, 2);
+INSERT INTO tournament (event_id, modality_id)
+VALUES (3, 3);
+INSERT INTO tournament (event_id, modality_id)
+VALUES (3, 5);
+INSERT INTO tournament (event_id, modality_id)
+VALUES (4, 4);
+INSERT INTO tournament (event_id, modality_id)
+VALUES (5, 3);
 
 INSERT INTO team (name, logo)
 VALUES ('Panda', pg_read_binary_file('pandas.png'));
@@ -270,8 +364,38 @@ VALUES ('Tatu Bolas', pg_read_binary_file('tatu_bolas.png'));
 INSERT INTO team (name, logo)
 VALUES ('Caveiras', pg_read_binary_file('caveiras.png'));
 
--- INSERT INTO ranking ()
--- VALUES ();
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (1, 1);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (1, 2);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (1, 3);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (2, 4);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (2, 5);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (3, 1);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (3, 5);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (4, 4);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (4, 3);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (4, 2);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (5, 1);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (5, 2);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (6, 3);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (6, 4);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (6, 5);
+INSERT INTO ranking (tournament_id, team_id)
+VALUES (6, 1);
 
 INSERT INTO referee
 VALUES ('11111111111', 'José da Silva', '1980-10-10', pg_read_binary_file('sample.pdf'));
@@ -329,7 +453,35 @@ VALUES ('Quadra dos Sonhos', 'Brasília', 'Distrito Federal', 'SQN 313', 100);
 INSERT INTO location (name, city, state, address, capacity)
 VALUES ('Quadra de Tênis', 'Brasília', 'Distrito Federal', 'Setor Hab Ind Sul', 200);
 
--- INSERT INTO match ()
--- VALUES ();
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-10 12:00, 2024-09-10 13:00]', 1, 1, 2, 1, '11111111111');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-10 13:30, 2024-09-10 14:30]', 1, 1, 3, 2, '55555555555');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-10 15:00, 2024-09-10 16:00]', 1, 2, 3, 1, '11111111111');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 9:00, 2024-09-11 10:00]', 2, 4, 5, 3, '22222222222');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 10:30, 2024-09-11 11:30]', 3, 1, 5, 4, '33333333333');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 10:30, 2024-09-11 11:30]', 4, 4, 3, 5, '44444444444');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 12:00, 2024-09-11 13:00]', 4, 4, 2, 4, '33333333333');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 9:00, 2024-09-11 10:00]', 4, 3, 2, 4, '11111111111');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-11 13:30, 2024-09-11 14:30]', 5, 1, 2, 2, '22222222222');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 10:00, 2024-09-12 11:00]', 6, 1, 3, 1, '11111111111');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 11:30, 2024-09-12 12:30]', 6, 1, 4, 2, '22222222222');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 14:00, 2024-09-12 15:00]', 6, 1, 5, 3, '33333333333');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 15:30, 2024-09-12 16:30]', 6, 3, 4, 4, '44444444444');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 11:30, 2024-09-12 12:30]', 6, 3, 5, 4, '11111111111');
+INSERT INTO match (duration, tournament_id, team1_id, team2_id, location_id, referee_cpf)
+VALUES ('[2024-09-12 10:00, 2024-09-12 11:00]', 6, 4, 5, 3, '55555555555');
 
 END;
