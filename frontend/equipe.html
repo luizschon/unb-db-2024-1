@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,80 +11,415 @@
             line-height: 1.6;
             margin: 0;
             padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h1, h2 {
             color: #333;
         }
         form {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
             margin-bottom: 20px;
         }
         label {
             display: block;
             margin-bottom: 5px;
+            font-weight: bold;
         }
-        input[type="text"], select {
+        input[type="text"], input[type="file"] {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-        input[type="submit"] {
+        input[type="submit"], button {
             background-color: #0066cc;
             color: white;
             padding: 10px 15px;
             border: none;
             cursor: pointer;
+            border-radius: 4px;
         }
-        input[type="submit"]:hover {
+        input[type="submit"]:hover, button:hover {
             background-color: #0056b3;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         th, td {
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
             text-align: left;
         }
         th {
             background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .action-btn {
+            margin-right: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+        .action-btn:last-child {
+            background-color: #f44336;
+        }
+        #logoPreview {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #debug {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>Gerenciar Equipes</h1>
-    
-    <h2>Adicionar Nova Equipe</h2>
-    <form id="addTeamForm">
-        <label for="teamName">Nome da Equipe:</label>
-        <input type="text" id="teamName" name="teamName" required>
+    <div class="container">
+        <h1>Gerenciar Equipes</h1>
         
-        <label for="teamSport">Esporte:</label>
-        <input type="text" id="teamSport" name="teamSport" required>
-        
-        <label for="teamPlayers">Jogadores (separados por vírgula):</label>
-        <input type="text" id="teamPlayers" name="teamPlayers">
-        
-        <input type="submit" value="Adicionar Equipe">
-    </form>
-
-    <h2>Lista de Equipes</h2>
-    <table id="teamTable">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Esporte</th>
-                <th>Jogadores</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
+        <h2>Adicionar/Editar Equipe</h2>
+        <form id="teamForm">
+            <input type="hidden" id="teamId" name="id">
+            <label for="teamName">Nome da Equipe:</label>
+            <input type="text" id="teamName" name="name" required>
             
-        </tbody>
-    </table>
+            <label for="teamCoach">Técnico:</label>
+            <select id="teamCoach" name="coach_cpf" required>
+                <option value="">Selecione um técnico</option>
+            </select>
+
+            <label for="teamPlayers">Jogadores:</label>
+            <select id="teamPlayers" name="players" multiple>
+                
+            </select>
+            
+            <label for="teamLogo">Logo da Equipe:</label>
+            <input type="file" id="teamLogo" name="logo" accept="image/*">
+            <img id="logoPreview" src="" alt="Preview do logo" style="display:none;">
+            
+            <input type="submit" id="submitBtn" value="Adicionar Equipe">
+        </form>
+
+        <h2>Lista de Equipes</h2>
+        <table id="teamTable">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Logo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div id="teamInfoModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Informações da Equipe</h2>
+                <div id="teamInfoContent"></div>
+            </div>
+        </div>
+
+        <div id="debug">
+            <h3>Debug Information</h3>
+            <pre id="debugOutput"></pre>
+        </div>
+    </div>
 
     <script>
-        
+        const API_BASE_URL = 'http://localhost:8000';
+        let currentTeams = [];
+        let currentCoaches = [];
+        let currentPlayers = [];
+        const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEHUlEQVR4nO2dW4hNURjHf2PGZVwil3ErnIzLIHnQKJGUhAcPlJCUCEnykgeXB0mUXEq5tHAOeXB5kFu5k1xCLiEPciuFcpl7nWXWOWvtmdY+e39rfbs9nL33+s7//Nbaa69vf+tsMAwjUAoO+/QFFgOngAfAa+ALUALKjvPf3wEXgR3AFKC7dKPaYhBwCHjJvzEFpBx5/h1wENBSjYuYvsAOoETHIhSJPAE2EbApA4HzmIWIKgPAVaDHYZtnVuK+Eo4CtUCP4HJTlLyEEUoM0ZSBzcCvlJgxHrjuuB3vgTlSHVADnIxpRJHItaMxckdpBo47bsuPCJEG8Ib7Nqywzpg5zY77vxOpWCEyQ0oDlxtU6plnrZP2XiOKJxjjYhixMuWXbV3kufZ47ntROmSWw9zVd2CtgAnDgLfCxpSkOpCFITpxWKMfRv4Jm73vL9WJLAxZJNx5k4XN2CZsSEnSlKTcAE4LF79YwfuXC79r0j52uc68M7VEpPGrhE0pRX5NRNfhN3UNbwEahY2J67bIwKj9kl1Iw3RhU44KmLFcuA9FK0kcFkVbwjajVqDY1mHvvjY6XmnUpZSzXJfwC9kd0w/7Xd4+FrjV+Hf45iSo1XgbXADqhfsww0oFPmkALqXQ6CpZYCUDn+j08peiDerQSmNj+uN/Bf0R8zkaIGGDNkkNuKyZKR01QANbJAeeFdqMLe5Cc4rJhk7bvMOH8O2oC/D6o3pO03uehtGZGZlO5UzkNqC6/7sX0Ao8xT+fgek2Q7LjKtkT2f4yHXgMVExJKgH9VIGvwJLINoMa4Ih1aF9sJ18pQrfJXPa5JewWzJjI9uOBezZF5S2D7FadU7JyMsCG9o08WvwSbWLx3PCJ0F3v6nt4YIQxNa/hbNZMNTPSExv4bYakj5VFMqRHhWbMltLIbsn5DCkD86Q0slcOq0TKKi/h7KvAX4nOnGgELpC9IV+i66CuWC7wV+IrMFJK4wZgteCc1UOLnPZLajw3ovP35WOWu1QyJrUVkBzT5rAKVX4ZI6HBVqiXucrRbL/vRsSlD9Au0PDqTB8OzY8v5GvVlICNwOfIa6c7yy6bqnLHXOB2ZIxtcemP5d7eTZqhc0FvbFbIUzWqM2wWXrjJCzWRx5Q9Qbvk2/6RMsYYY4wxxhhjjPm/0cAqYA9wHnhA2BdudSN6/YfOTi3A/jHAIeA18DtF7/J0S8vAI2A30JdAGBfDqtP7dL27nLs4JwMvEhoQcnRi61kgbY8FDuCOa8A4cgJdLXeeQYUOA6uBZro2tOI1l4GNQG/yTzOwO4N3WPQBZnkLs4tBwGnCxyS97m0m5O1hWxJcbkJeXOnAITTrgAf49W4Indb3PkPUObqAxhhjjDEmL/wBHjU/kphWCf8AAAAASUVORK5CYII=';
+
+        function debugLog(message) {
+            const debugOutput = document.getElementById('debugOutput');
+            debugOutput.textContent += message + '\n';
+            console.log(message);
+        }
+
+        async function fetchWithErrorHandling(url, options = {}) {
+            try {
+                debugLog(`Fetching: ${url}`);
+                const response = await fetch(url, options);
+                debugLog(`Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const data = await response.json();
+                    debugLog(`Response data: ${JSON.stringify(data, null, 2)}`);
+                    return data;
+                } else {
+                    return response;
+                }
+            } catch (error) {
+                debugLog(`Error: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function loadTeams() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_BASE_URL}/team`);
+                if (data.status === "success") {
+                    currentTeams = Array.isArray(data.response) ? data.response : [data.response];
+                    const tableBody = document.querySelector('#teamTable tbody');
+                    tableBody.innerHTML = '';
+                    currentTeams.forEach(team => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${team.name}</td>
+                            <td><img src="${API_BASE_URL}/team/${team.id}/logo" alt="${team.name} logo" style="width: 50px; height: 50px;" onerror="this.src='${PLACEHOLDER_IMAGE}'"></td>
+                            <td>
+                                <button class="action-btn" onclick="editTeam(${team.id})">Editar</button>
+                                <button class="action-btn" onclick="deleteTeam(${team.id})">Excluir</button>
+                                <button class="action-btn" onclick="viewTeamInfo(${team.id})">Ver Equipe</button>
+                            </td>
+                        `;
+                    });
+                } else {
+                    throw new Error(data.error_msg);
+                }
+            } catch (error) {
+                debugLog(`Erro ao carregar equipes: ${error.message}`);
+                alert('Erro ao carregar equipes. Por favor, verifique o console para mais detalhes.');
+            }
+        }
+
+        async function loadCoaches() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_BASE_URL}/coach`);
+                if (data.status === "success") {
+                    currentCoaches = Array.isArray(data.response) ? data.response : [data.response];
+                    const coachSelect = document.getElementById('teamCoach');
+                    coachSelect.innerHTML = '<option value="">Selecione um técnico</option>';
+                    currentCoaches.forEach(coach => {
+                        coachSelect.innerHTML += `<option value="${coach.cpf}">${coach.name}</option>`;
+                    });
+                } else {
+                    throw new Error(data.error_msg);
+                }
+            } catch (error) {
+                debugLog(`Erro ao carregar técnicos: ${error.message}`);
+                alert('Erro ao carregar técnicos. Por favor, verifique o console para mais detalhes.');
+            }
+        }
+
+        async function loadPlayers() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_BASE_URL}/player`);
+                if (data.status === "success") {
+                    currentPlayers = Array.isArray(data.response) ? data.response : [data.response];
+                    const playerSelect = document.getElementById('teamPlayers');
+                    playerSelect.innerHTML = '';
+                    currentPlayers.forEach(player => {
+                        playerSelect.innerHTML += `<option value="${player.cpf}">${player.name}</option>`;
+                    });
+                } else {
+                    throw new Error(data.error_msg);
+                }
+            } catch (error) {
+                debugLog(`Erro ao carregar jogadores: ${error.message}`);
+                alert('Erro ao carregar jogadores. Por favor, verifique o console para mais detalhes.');
+            }
+        }
+
+        document.getElementById('teamForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const teamId = formData.get('id');
+            const url = teamId ? `${API_BASE_URL}/team/${teamId}` : `${API_BASE_URL}/team`;
+            const method = teamId ? 'PATCH' : 'POST';
+
+            // Adiciona os jogadores selecionados
+            const selectedPlayers = Array.from(document.getElementById('teamPlayers').selectedOptions).map(option => option.value);
+            formData.set('players', JSON.stringify(selectedPlayers));
+
+            try {
+                const data = await fetchWithErrorHandling(url, {
+                    method: method,
+                    body: formData
+                });
+                
+                if (data.status === "success") {
+                    this.reset();
+                    document.getElementById('teamId').value = '';
+                    document.getElementById('submitBtn').value = 'Adicionar Equipe';
+                    document.getElementById('logoPreview').style.display = 'none';
+                    await loadTeams();
+                } else {
+                    throw new Error(data.error_msg);
+                }
+            } catch (error) {
+                debugLog(`Erro ao salvar equipe: ${error.message}`);
+                alert('Erro ao salvar equipe. Por favor, verifique o console para mais detalhes.');
+            }
+        });
+
+        async function deleteTeam(id) {
+            if (confirm('Tem certeza que deseja excluir esta equipe?')) {
+                try {
+                    const data = await fetchWithErrorHandling(`${API_BASE_URL}/team/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (data.status === "success") {
+                        await loadTeams();
+                    } else {
+                        throw new Error(data.error_msg);
+                    }
+                } catch (error) {
+                    debugLog(`Erro ao excluir equipe: ${error.message}`);
+                    alert('Erro ao excluir equipe. Por favor, verifique o console para mais detalhes.');
+                }
+            }
+        }
+        async function editTeam(id) {
+            const team = currentTeams.find(t => t.id === id);
+            if (team) {
+                document.getElementById('teamId').value = team.id;
+                document.getElementById('teamName').value = team.name;
+                document.getElementById('teamCoach').value = team.coach_cpf || '';
+
+                // Selecionar os jogadores da equipe
+                const playerSelect = document.getElementById('teamPlayers');
+                for (let option of playerSelect.options) {
+                    option.selected = team.players && team.players.includes(option.value);
+                }
+
+                try {
+                    const logoResponse = await fetchWithErrorHandling(`${API_BASE_URL}/team/${team.id}/logo`);
+                    const logoBlob = await logoResponse.blob();
+                    const logoUrl = URL.createObjectURL(logoBlob);
+                    document.getElementById('logoPreview').src = logoUrl;
+                    document.getElementById('logoPreview').style.display = 'block';
+                } catch (error) {
+                    debugLog(`Erro ao carregar logo: ${error.message}`);
+                    document.getElementById('logoPreview').src = PLACEHOLDER_IMAGE;
+                    document.getElementById('logoPreview').style.display = 'block';
+                }
+                document.getElementById('submitBtn').value = 'Atualizar Equipe';
+            }
+        }
+
+        async function viewTeamInfo(id) {
+            try {
+                const data = await fetchWithErrorHandling(`${API_BASE_URL}/team/${id}`);
+                if (data.status === "success") {
+                    const team = data.response;
+                    const coach = currentCoaches.find(c => c.cpf === team.coach_cpf);
+                    const players = currentPlayers.filter(p => team.players && team.players.includes(p.cpf));
+
+                    let content = `
+                        <h3>${team.name}</h3>
+                        <img src="${API_BASE_URL}/team/${team.id}/logo" alt="${team.name} logo" style="width: 100px; height: 100px;" onerror="this.src='${PLACEHOLDER_IMAGE}'">
+                        <p><strong>Técnico:</strong> ${coach ? coach.name : 'Não definido'}</p>
+                        <p><strong>Jogadores:</strong></p>
+                        <ul>
+                            ${players.map(p => `<li>${p.name}</li>`).join('')}
+                        </ul>
+                    `;
+
+                    document.getElementById('teamInfoContent').innerHTML = content;
+                    document.getElementById('teamInfoModal').style.display = 'block';
+                } else {
+                    throw new Error(data.error_msg);
+                }
+            } catch (error) {
+                debugLog(`Erro ao carregar informações da equipe: ${error.message}`);
+                alert('Erro ao carregar informações da equipe. Por favor, verifique o console para mais detalhes.');
+            }
+        }
+
+        document.getElementById('teamLogo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoPreview').src = e.target.result;
+                    document.getElementById('logoPreview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Fechar o modal quando clicar no X
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('teamInfoModal').style.display = 'none';
+        }
+
+        // Fechar o modal quando clicar fora dele
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('teamInfoModal')) {
+                document.getElementById('teamInfoModal').style.display = 'none';
+            }
+        }
+
+        // Inicialização
+        async function init() {
+            await Promise.all([loadTeams(), loadCoaches(), loadPlayers()]);
+        }
+
+        init();
     </script>
 </body>
 </html>
