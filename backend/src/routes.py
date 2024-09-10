@@ -25,7 +25,8 @@ class Router:
         # Tournament Actions
         ("GET", r"/tournament/?$"): lambda _m, _: TournamentController.index(),
         ("GET", r"/tournament/(?P<id>\d+)/?$"): lambda m, _: TournamentController.show(int(m.group('id'))),
-        ("GET", r"/tournament/(?P<id>\d+)/modality/?$"): lambda m, _: TournamentController.get_modality(m.group('id')),
+        ("GET", r"/tournament/(?P<id>\d+)/ranking/?$"): lambda m, _: TournamentController.get_ranking(int(m.group('id'))),
+        ("GET", r"/tournament/(?P<id>\d+)/modality/?$"): lambda m, _: TournamentController.get_modality((m.group('id'))),
         ("POST", r"/tournament/?$"): lambda _, data: TournamentController.create(data),
         ("PATCH", r"/tournament/(?P<id>\d+)/?$"): lambda m, data: TournamentController.update(int(m.group('id')), data),
         ("DELETE", r"/tournament/(?P<id>\d+)/?$"): lambda m, _: TournamentController.destroy(int(m.group('id'))),
@@ -62,8 +63,8 @@ class Router:
         ("GET", r"/match/finished?$"): lambda _m, _: MatchController.get_finished(),
         ("GET", r"/match/(?P<id>\d+)/?$"): lambda m, _: MatchController.show(int(m.group('id'))),
         ("POST", r"/match/?$"): lambda _, data: MatchController.create(data),
-        ("PATCH", r"/match/(?P<id>\d+)/?$"): lambda m, data: MatchController.update(int(m.group('cpf')), data),
-        ("DELETE", r"/match/(?P<id>\d+)/?$"): lambda m, _: MatchController.destroy(int(m.group('cpf'))),
+        ("PATCH", r"/match/(?P<id>\d+)/?$"): lambda m, data: MatchController.update(int(m.group('id')), data),
+        ("DELETE", r"/match/(?P<id>\d+)/?$"): lambda m, _: MatchController.destroy(int(m.group('id'))),
     }
 
     @classmethod

@@ -59,6 +59,8 @@ class Tournament:
         # Filtra valores recebidos que não pertencem ao schema da tabela Tournament
         # e transforma em lista de tuplas
         items = [(k, v) for k, v in data.items() if k in TOURNAMENT_SCHEMA]
+        if len(items) == 0:
+            return None
 
         try:
             with DatabaseConnection().cursor() as cur:
@@ -74,6 +76,7 @@ class Tournament:
                         ))
                     )
                 )
+                print(query.as_string())
                 cur.execute(query, (id,))
                 res = cur.fetchone()
             DatabaseConnection().commit()

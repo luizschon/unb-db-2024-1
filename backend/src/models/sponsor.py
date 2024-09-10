@@ -114,7 +114,7 @@ class Sponsor:
                     )
                 )
                 cur.execute(query)
-                res = cur.fetchall()
+                return cur.fetchall()
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
         except DatabaseError as err:
