@@ -39,6 +39,8 @@ class Team:
             return row
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+        except DatabaseError as err:
+            raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
 
     @staticmethod
