@@ -18,7 +18,7 @@ class MatchController:
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
             UpdateRankings.run()
-            return [200, { "status": "success", "response": result }]
+            return [200, { "status": "success", "response": response }]
         except ModelError as err:
             return [400, {
                 "status": "error",
@@ -96,7 +96,7 @@ class MatchController:
                 range = r["duration"]
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
-            return [200, { "status": "success", "response": result }]
+            return [200, { "status": "success", "response": response }]
         except ModelError as err:
             return [400, {
                 "status": "error",
@@ -113,7 +113,7 @@ class MatchController:
                 range = r["duration"]
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
-            return [200, { "status": "success", "response": result }]
+            return [200, { "status": "success", "response": response }]
         except ModelError as err:
             return [400, {
                 "status": "error",
@@ -131,7 +131,7 @@ class MatchController:
                 del r["duration"]
                 response.append(r | parse_tsrange(range))
             UpdateRankings.run()
-            return [200, { "status": "success", "response": result }]
+            return [200, { "status": "success", "response": response }]
         except ModelError as err:
             return [400, {
                 "status": "error",
