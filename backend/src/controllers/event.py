@@ -88,11 +88,56 @@ class EventController:
             for sponsorship in s or []:
                 sponsor = Sponsor.find_by_cnpj(sponsorship['sponsor_cnpj'])
                 if sponsor:
-                    sponsor["logo"] = encode_base64(sponsor["logo"])
                     sponsor = sponsor | { "amount": sponsorship["amount"] }
                     result.append(sponsor)
 
             return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def create_sponsorship(id, data) -> RouterReponse:
+        try:
+            result = Sponsorship.create({ "event_id": id } | data)
+            if result:
+                sponsor = Sponsor.find_by_cnpj(result['sponsor_cnpj'])
+                if sponsor:
+                    result = result | sponsor
+                print(result)
+            return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def update_sponsorship(id, cnpj, data) -> RouterReponse:
+        try:
+            result = Sponsorship.update(id, cnpj, data)
+            if result:
+                sponsor = Sponsor.find_by_cnpj(result['sponsor_cnpj'])
+                if sponsor:
+                    result = result | sponsor
+                print(result)
+            return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def destroy_sponsorship(id, cnpj) -> RouterReponse:
+        try:
+            Sponsorship.delete(id, cnpj)
+            return [200, { "status": "success", "response": None }]
         except ModelError as err:
             return [400, {
                 "status": "error",

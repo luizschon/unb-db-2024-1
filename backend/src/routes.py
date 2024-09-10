@@ -17,10 +17,13 @@ class Router:
         # Event Actions
         ("GET", r"/event/?$"): lambda _m, _: EventController.index(),
         ("GET", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.show(int(m.group('id'))),
-        ("GET", r"/event/(?P<id>\d+)/sponsorships/?$"): lambda m, _: EventController.get_sponsorships(m.group('id')),
+        ("GET", r"/event/(?P<id>\d+)/sponsorships/?$"): lambda m, _: EventController.get_sponsorships(int(m.group('id'))),
         ("POST", r"/event/?$"): lambda _, data: EventController.create(data),
+        ("POST", r"/event/(?P<id>\d+)/sponsorships/?$"): lambda m, data: EventController.create_sponsorship(int(m.group('id')), data),
         ("PATCH", r"/event/(?P<id>\d+)/?$"): lambda m, data: EventController.update(int(m.group('id')), data),
+        ("PATCH", r"/event/(?P<id>\d+)/sponsorships/(?P<cnpj>\d+)/?$"): lambda m, data: EventController.update_sponsorship(int(m.group('id')), m.group('cnpj'), data),
         ("DELETE", r"/event/(?P<id>\d+)/?$"): lambda m, _: EventController.destroy(int(m.group('id'))),
+        ("DELETE", r"/event/(?P<id>\d+)/sponsorships/(?P<cnpj>\d+)/?$"): lambda m, _: EventController.destroy_sponsorship(int(m.group('id')), m.group('cnpj')),
 
         # Tournament Actions
         ("GET", r"/tournament/?$"): lambda _m, _: TournamentController.index(),

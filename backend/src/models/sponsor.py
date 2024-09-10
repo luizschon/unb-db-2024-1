@@ -9,7 +9,7 @@ class Sponsor:
     def all():
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from sponsor")
+                cur.execute("SELECT cnpj, name from sponsor")
                 rows = cur.fetchall()
             return rows
         except OperationalError:
@@ -19,7 +19,22 @@ class Sponsor:
     def find_by_cnpj(cnpj):
         try:
             with DatabaseConnection().cursor() as cur:
-                cur.execute("SELECT * from sponsor WHERE cnpj = %s", (cnpj,))
+                cur.execute("SELECT cnpj, name from sponsor WHERE cnpj = %s", (cnpj,))
+                row = cur.fetchone()
+            return row
+        except OperationalError:
+            raise(ModelError("no database connection", "00000"))
+
+    @staticmethod
+    def get_fields_by_cnpj(cnpj, *args):
+        try:
+            with DatabaseConnection().cursor() as cur:
+                query = sql.SQL("""
+                    SELECT {fields} from sponsor WHERE cnpj = %s
+                """).format(
+                    fields=sql.SQL(',').join(list(map(lambda a: sql.Identifier(a), args)))
+                )
+                cur.execute(query, (cnpj,))
                 row = cur.fetchone()
             return row
         except OperationalError:
@@ -35,7 +50,7 @@ class Sponsor:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    INSERT INTO sponsor ({columns}) VALUES ({values}) RETURNING *
+                    INSERT INTO sponsor ({columns}) VALUES ({values}) RETURNING cnpj, name
                 """).format(
                     columns=sql.SQL(',').join(
                         list(map(lambda c: sql.Identifier(c), columns))
@@ -63,7 +78,7 @@ class Sponsor:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    UPDATE sponsor SET {assigns} WHERE cnpj = %s RETURNING *
+                    UPDATE sponsor SET {assigns} WHERE cnpj = %s RETURNING cnpj, name
                 """).format(
                     assigns=sql.SQL(',').join(
                         list(map(
@@ -102,7 +117,7 @@ class Sponsor:
         try:
             with DatabaseConnection().cursor() as cur:
                 query = sql.SQL("""
-                    SELECT * from sponsor WHERE {conditions}
+                    SELECT cnpj, name from sponsor WHERE {conditions}
                 """).format(
                     conditions=sql.SQL(' AND ').join(
                         list(map(

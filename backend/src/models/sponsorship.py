@@ -96,8 +96,13 @@ class Sponsorship:
                     DELETE FROM sponsorship WHERE event_id = %s AND sponsor_cnpj = %s
                 """, (event_id, sponsor_cnpj,))
             DatabaseConnection().commit()
+        except Exception as err:
+            print(err)
         except OperationalError:
             raise(ModelError("no database connection", "00000"))
+        except DatabaseError as err:
+            DatabaseConnection().rollback()
+            raise(ModelError(err.diag.message_primary, err.diag.sqlstate or "unknown"))
 
     @staticmethod
     def where(data):
