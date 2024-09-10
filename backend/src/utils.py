@@ -27,3 +27,9 @@ def parse_formdata(decoded_multipart):
             data[name] = part.text
 
     return data
+
+def parse_tsrange(range):
+    return {
+        "start_time": range.lower.isoformat(),
+        "end_time": range.upper.isoformat()
+    }

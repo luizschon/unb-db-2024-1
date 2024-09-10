@@ -5,6 +5,7 @@ from src.controllers.event import EventController
 from src.controllers.team import TeamController
 from src.controllers.player import PlayerController
 from src.controllers.coach import CoachController
+from src.controllers.match import MatchController
 from src.types import RouterReponse
 
 def not_found() -> RouterReponse:
@@ -42,6 +43,16 @@ class Router:
         ("POST", r"/player/?$"): lambda _, data: PlayerController.create(data),
         ("PATCH", r"/player/(?P<cpf>\d+)/?$"): lambda m, data: PlayerController.update(m.group('cpf'), data),
         ("DELETE", r"/player/(?P<cpf>\d+)/?$"): lambda m, _: PlayerController.destroy(m.group('cpf')),
+
+        # Match Actions
+        ("GET", r"/match/?$"): lambda _m, _: MatchController.index(),
+        ("GET", r"/match/upcoming?$"): lambda _m, _: MatchController.get_upcoming(),
+        ("GET", r"/match/ongoing?$"): lambda _m, _: MatchController.get_ongoing(),
+        ("GET", r"/match/finished?$"): lambda _m, _: MatchController.get_finished(),
+        ("GET", r"/match/(?P<id>\d+)/?$"): lambda m, _: MatchController.show(int(m.group('id'))),
+        ("POST", r"/match/?$"): lambda _, data: MatchController.create(data),
+        ("PATCH", r"/match/(?P<id>\d+)/?$"): lambda m, data: MatchController.update(int(m.group('cpf')), data),
+        ("DELETE", r"/match/(?P<id>\d+)/?$"): lambda m, _: MatchController.destroy(int(m.group('cpf'))),
     }
 
     @classmethod

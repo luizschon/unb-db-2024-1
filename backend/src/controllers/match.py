@@ -1,20 +1,21 @@
 import psycopg
 import base64
-from src.utils import encode_base64
+from src.utils import encode_base64, parse_tsrange
 from src.models.error import ModelError
 from src.types import RouterReponse
-from src.models.event import Event
-from src.models.sponsor import Sponsor
-from src.models.sponsorship import Sponsorship
+from src.models.match import Match
+from src.models.views import FinishedMatches, OngoingMatches, UpcomingMatches
 
-class EventController:
+class MatchController:
     @staticmethod
     def index() -> RouterReponse:
         try:
-            result = Event.all()
-            # Faz parse da data para usar formato ISO 8601
-            for r in result:
-                r["date"] = r["date"].isoformat()
+            result = Match.all()
+            response = []
+            for r in result or []:
+                range = r["duration"]
+                del r["duration"]
+                response.append(r | parse_tsrange(range))
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -26,10 +27,10 @@ class EventController:
     @staticmethod
     def show(id) -> RouterReponse:
         try:
-            result = Event.find_by_id(id)
-            # Faz parse da data para usar formato ISO 8601
+            result = Match.find_by_id(id)
             if result:
-                result["date"] = result["date"].isoformat()
+                result = result | parse_tsrange(result["duration"])
+                del result["duration"]
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -41,10 +42,10 @@ class EventController:
     @staticmethod
     def create(data) -> RouterReponse:
         try:
-            result = Event.create(data)
-            # Faz parse da data para usar formato ISO 8601
+            result = Match.create(data)
             if result:
-                result["date"] = result["date"].isoformat()
+                result = result | parse_tsrange(result["duration"])
+                del result["duration"]
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -56,10 +57,10 @@ class EventController:
     @staticmethod
     def update(id, data) -> RouterReponse:
         try:
-            result = Event.update(id, data)
-            # Faz parse da data para usar formato ISO 8601
+            result = Match.update(id, data)
             if result:
-                result["date"] = result["date"].isoformat()
+                result = result | parse_tsrange(result["duration"])
+                del result["duration"]
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
@@ -71,7 +72,7 @@ class EventController:
     @staticmethod
     def destroy(id) -> RouterReponse:
         try:
-            Event.delete(id)
+            Match.delete(id)
             return [200, { "status": "success", "response": None }]
         except ModelError as err:
             return [400, {
@@ -81,17 +82,48 @@ class EventController:
             }]
 
     @staticmethod
-    def get_sponsorships(id) -> RouterReponse:
+    def get_upcoming() -> RouterReponse:
         try:
-            s = Sponsorship.where({ "event_id": int(id) })
-            result = []
-            for sponsorship in s or []:
-                sponsor = Sponsor.find_by_cnpj(sponsorship['sponsor_cnpj'])
-                if sponsor:
-                    sponsor["logo"] = encode_base64(sponsor["logo"])
-                    sponsor = sponsor | { "amount": sponsorship["amount"] }
-                    result.append(sponsor)
+            result = UpcomingMatches.call('*')
+            response = []
+            for r in result or []:
+                range = r["duration"]
+                del r["duration"]
+                response.append(r | parse_tsrange(range))
+            return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
 
+    @staticmethod
+    def get_ongoing() -> RouterReponse:
+        try:
+            result = OngoingMatches.call('*')
+            response = []
+            for r in result or []:
+                range = r["duration"]
+                del r["duration"]
+                response.append(r | parse_tsrange(range))
+            return [200, { "status": "success", "response": result }]
+        except ModelError as err:
+            return [400, {
+                "status": "error",
+                "error_msg": err.__str__(),
+                "error_code": err.error_code,
+            }]
+
+    @staticmethod
+    def get_finished() -> RouterReponse:
+        try:
+            result = FinishedMatches.call('*')
+            response = []
+            for r in result or []:
+                range = r["duration"]
+                del r["duration"]
+                response.append(r | parse_tsrange(range))
             return [200, { "status": "success", "response": result }]
         except ModelError as err:
             return [400, {
